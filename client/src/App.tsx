@@ -1,7 +1,8 @@
 import { Route, Routes } from 'react-router'
-import { LoginForm } from './components/forms/auth/LoginForm'
-import { SignupForm } from './components/forms/auth/SignupForm'
+import { LoginForm } from './components/forms/auth/admin/LoginForm'
+import { SignupForm } from './components/forms/auth/admin/SignupForm'
 import AuthLayout from './components/layouts/AuthLayout'
+import NotFound from './pages/NotFound'
 
 function App() {
   return (
@@ -10,10 +11,12 @@ function App() {
 
       {/* Auth Layout */}
       <Route element={<AuthLayout />} >
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/signup" element={<SignupForm />} />
+        <Route path="/admin/login" element={<LoginForm />} />
+        <Route path="/admin/signup" element={<SignupForm />} />
       </Route>
       
+      {/* Not Found Page */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }
