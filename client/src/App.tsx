@@ -3,6 +3,7 @@ import { LoginForm } from './components/forms/auth/admin/LoginForm'
 import { SignupForm } from './components/forms/auth/admin/SignupForm'
 import AuthLayout from './components/layouts/AuthLayout'
 import NotFound from './pages/NotFound'
+import SalesLoginForm from './components/forms/auth/salesPerson/SalesLoginForm'
 
 function App() {
   return (
@@ -11,8 +12,13 @@ function App() {
 
       {/* Auth Layout */}
       <Route element={<AuthLayout />} >
-        <Route path="/admin/login" element={<LoginForm />} />
-        <Route path="/admin/signup" element={<SignupForm />} />
+        <Route path="/login" element={<SalesLoginForm />} />
+
+        {/* Admin Auth Forms */}
+        <Route path="/admin">
+          <Route path="login" element={<LoginForm />} />
+          <Route path="signup" element={<SignupForm />} />
+        </Route>
       </Route>
       
       {/* Not Found Page */}
