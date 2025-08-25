@@ -32,6 +32,8 @@
     // "noImplicitOverride": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     // "noFallthroughCasesInSwitch": true,
     // "noPropertyAccessFromIndexSignature": true,
 
