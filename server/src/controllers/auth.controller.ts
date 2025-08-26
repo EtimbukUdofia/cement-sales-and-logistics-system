@@ -1,9 +1,10 @@
-import { type Request, type Response } from "express";
+import { type Response } from "express";
 import bcrypt from "bcryptjs";
 import User from "../models/User.ts";
 import generateTokenAndSetCookie from "../utils/generateTokenAndSetCookie.ts";
+import type { AuthRequest } from "../interfaces/interface.ts";
 
-export const signup = async (req: Request, res: Response): Promise<void> => {
+export const signup = async (req: AuthRequest, res: Response): Promise<void> => {
   const { username, email, password, role, shopId } = req.body;
 
   try {
@@ -43,7 +44,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const login = async (req: Request, res: Response): Promise<void> => {
+export const login = async (req: AuthRequest, res: Response): Promise<void> => {
   const { email, password } = req.body;
 
   try {
@@ -84,12 +85,24 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 };
 
-export const logout = async (_req: Request, res:Response): Promise<void> => {
+export const logout = async (_req: AuthRequest, res: Response): Promise<void> => {
   res.clearCookie("cement_logistics_token");
 
   res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 
-export const checkAuth = async (): Promise<void> => {
-
+export const checkAuth = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const user = await User.findById(req.userId).select('-password');
+  
+    if (!user) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
+  
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    console.error('Check auth error:', (error as Error).message);
+    res.status(500).json({ success: false, message: 'Server error during authentication check' });
+  }
 }
