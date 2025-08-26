@@ -5,10 +5,10 @@ import generateTokenAndSetCookie from "../utils/generateTokenAndSetCookie.ts";
 import type { AuthRequest } from "../interfaces/interface.ts";
 
 export const signup = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { username, email, password, role, shopId } = req.body;
+  const { username, email, password } = req.body;
 
   try {
-    if (!username || !email || !password || !role) {
+    if (!username || !email || !password) {
       res.status(400).json({ success: false, message: 'All fields are required' });
       return;
     }
@@ -22,7 +22,7 @@ export const signup = async (req: AuthRequest, res: Response): Promise<void> => 
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({ username, email, password: hashedPassword, role, shopId });
+    const newUser = new User({ username, email, password: hashedPassword });
     const result = await newUser.save();
 
     // generate jwt
@@ -94,12 +94,12 @@ export const logout = async (_req: AuthRequest, res: Response): Promise<void> =>
 export const checkAuth = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const user = await User.findById(req.userId).select('-password');
-  
+
     if (!user) {
       res.status(401).json({ success: false, message: "Unauthorized" });
       return;
     }
-  
+
     res.status(200).json({ success: true, user });
   } catch (error) {
     console.error('Check auth error:', (error as Error).message);
