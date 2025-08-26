@@ -1,4 +1,4 @@
-import { Link } from "react-router"
+import { Link, useNavigate } from "react-router"
 import { LockIcon, Mail } from "lucide-react"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -7,8 +7,11 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useAuthStore } from "@/store/authStore"
+import { toast } from "sonner"
 
 const schema = z.object({
+  username: z.string().min(1, "Username is required").trim(),
   email: z.email("Invalid email address").toLowerCase().trim(),
   password: z.string().min(1, "Password is required"),
   confirmPassword: z.string().min(1, "Confirm Password is required")
@@ -32,9 +35,22 @@ export function SignupForm({
     },
   });
 
-  const onSubmit = (data: FormData) => {
-    console.log("Form submitted:", data);
+  const { signup } = useAuthStore();
+  const navigate = useNavigate();
+
+  const onSubmit = async (data: FormData) => {
     // Handle login logic here
+    try {
+      await signup({
+        username: data.username,
+        email: data.email,
+        password: data.password,
+      });
+      navigate("/");
+    } catch (error) {
+      console.error("Signup failed:", error);
+      toast.error("Signup failed. Please try again.");
+    }
   };
 
   return (
@@ -42,10 +58,28 @@ export function SignupForm({
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-semibold">Signup</h1>
         <p className="text-muted-foreground text-sm text-balance">
-          Please provide your email and password to sign up.
+          Please provide your username, email and password to sign up.
         </p>
       </div>
       <div className="grid gap-6">
+        <div className="grid">
+          <Label className="pb-3" htmlFor="email">Username</Label>
+          <div className="relative">
+            <Mail className="absolute left-1 top-1/2 -translate-y-1/2 h-5 text-muted-foreground" />
+            <Input
+              id="username"
+              type="text"
+              {...register("username")}
+              aria-invalid={!!errors.username}
+              placeholder="Enter Username"
+              className="pl-8 border-gray-600"
+            // required
+            />
+          </div>
+          {errors.username && (
+            <p className="text-red-500 text-sm">{errors.username.message}</p>
+          )}
+        </div>
         <div className="grid">
           <Label className="pb-3" htmlFor="email">Email</Label>
           <div className="relative">
@@ -110,7 +144,7 @@ export function SignupForm({
       </div>
       <div className="text-center text-sm">
         Already have an account?{" "}
-        <Link to={"/login"} className="underline underline-offset-4">Log in</Link>
+        <Link to={"/admin/login"} className="underline underline-offset-4">Log in</Link>
       </div>
     </form>
   )

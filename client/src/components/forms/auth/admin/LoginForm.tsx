@@ -6,7 +6,9 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Link } from "react-router"
+import { Link, useNavigate } from "react-router"
+import { toast } from "sonner"
+import { useAuthStore } from "@/store/authStore"
 
 const schema = z.object({
   email: z.email("Invalid email address").toLowerCase().trim(),
@@ -28,9 +30,22 @@ export function LoginForm({
     },
   });
 
-  const onSubmit = (data: FormData) => {
+  const { login } = useAuthStore();
+  const navigate = useNavigate();
+
+  const onSubmit = async (data: FormData) => {
     console.log("Form submitted:", data);
     // Handle login logic here
+    try {
+      await login(
+        data.email,
+        data.password,
+      );
+      navigate("/");
+    } catch (error) {
+      console.error("Login failed:", error);
+      toast.error("Login failed. Please try again.");
+    }
   };
 
   return (
@@ -98,7 +113,7 @@ export function LoginForm({
       </div>
       <div className="text-center text-sm">
         Don&apos;t have an account?{" "}
-        <Link to={"/signup"} className="underline underline-offset-4">Sign Up</Link>
+        <Link to={"/admin/signup"} className="underline underline-offset-4">Sign Up</Link>
       </div>
     </form>
   )
