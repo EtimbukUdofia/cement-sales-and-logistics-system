@@ -5,13 +5,13 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v0/au
 
 axios.defaults.withCredentials = true;
 
-interface SignupData {
+type SignupData = {
   username: string;
   email: string;
   password: string;
 }
 
-interface User {
+type User = {
   id: string;
   username: string;
   email: string;
@@ -19,7 +19,7 @@ interface User {
   updatedAt: string;
 }
 
-interface AuthState {
+type AuthState = {
   user: User | null;
   isLoading: boolean;
   error: string | null;
@@ -31,14 +31,20 @@ interface AuthState {
   logout: () => Promise<void>;
 }
 
+type UserData = {
+  username: string;
+  email: string;
+  password: string;
+}
+
 export const useAuthStore = create<AuthState>()((set) => ({
   user: null,
   isLoading: false,
   error: null,
   isAuthenticated: false,
-  isCheckingAuth: false,
+  isCheckingAuth: true,
 
-  signup: async (userData) => {
+  signup: async (userData: UserData) => {
     set({ isLoading: true, error: null });
     try {
       const response = await axios.post(`${API_URL}/signup`, userData);
