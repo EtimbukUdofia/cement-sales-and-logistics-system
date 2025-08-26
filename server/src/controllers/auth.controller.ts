@@ -82,10 +82,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ success: false, message: 'Server error during login' });
   }
 
-}
-export const logout = async (): Promise<void> => {
+};
 
-}
+export const logout = async (_req: Request, res:Response): Promise<void> => {
+  res.clearCookie("cement_logistics_token");
+
+  res.status(200).json({ success: true, message: "Logged out successfully" });
+};
+
 export const checkAuth = async (): Promise<void> => {
 
 }
