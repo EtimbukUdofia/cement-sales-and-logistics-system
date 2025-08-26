@@ -29,7 +29,7 @@ app.get('/api/v0/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });  
 });
 
-app.get('*', (_req: Request, res: Response) => {
+app.get(/(.*)/, (_req: Request, res: Response) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
