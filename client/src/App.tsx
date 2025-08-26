@@ -5,7 +5,8 @@ import AuthLayout from './components/layouts/AuthLayout'
 import NotFound from './pages/NotFound'
 import SalesLoginForm from './components/forms/auth/salesPerson/SalesLoginForm'
 import { useAuthStore } from './store/authStore'
-import { type JSX } from 'react'
+import { useEffect, type JSX } from 'react'
+import LoadingSpinner from './components/LoadingSpinner'
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { isAuthenticated } = useAuthStore();
@@ -28,12 +29,16 @@ const RedirectIfAuthenticated = ({ children }: { children: JSX.Element }) => {
 }
 
 function App() {
-  // const { checkAuth } = useAuthStore();
+  const { checkAuth, isCheckingAuth } = useAuthStore();
 
   // Check authentication status on app load
-  // useEffect(() => {
-  //   checkAuth();
-  // }, [checkAuth]);
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (isCheckingAuth) {
+    return <LoadingSpinner/>
+  }
   
   return (
     <Routes>
