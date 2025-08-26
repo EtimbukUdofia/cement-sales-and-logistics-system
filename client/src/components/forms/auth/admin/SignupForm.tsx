@@ -17,7 +17,7 @@ const schema = z.object({
   confirmPassword: z.string().min(1, "Confirm Password is required")
 }).refine((data) => {
   return data.password === data.confirmPassword;
-}, {  message: "Passwords must match", path: ["confirmPassword"]});
+}, { message: "Passwords must match", path: ["confirmPassword"] });
 
 type FormData = z.infer<typeof schema>;
 
