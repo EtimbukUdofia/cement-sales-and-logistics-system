@@ -13,8 +13,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { NavLink } from "react-router"
-import { LayoutDashboard, Package, Truck, ShoppingCart } from "lucide-react"
+import { SidebarNavLinks } from "./sidebar-nav-links"
+
 
 const data = {
   user: {
@@ -44,53 +44,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <nav className="flex-1 py-4">
-          <ul className="space-y-2">
-            <li>
-              <NavLink
-                to="/admin"
-                className={({ isActive }) =>
-                  `flex items-center gap-5 px-4 py-2 rounded sidebar-navlink-hover ${isActive ? 'sidebar-navlink-active font-semibold' : ''}`
-                }
-                end
-              >
-                <LayoutDashboard size={16} />
-                Dashboard
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/orders"
-                className={({ isActive }) =>
-                  `flex items-center gap-5 px-4 py-2 rounded sidebar-navlink-hover ${isActive ? 'sidebar-navlink-active font-semibold' : ''}`
-                }
-              >
-                <ShoppingCart size={16} />
-                Orders
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/suppliers"
-                className={({ isActive }) =>
-                  `flex items-center gap-5 px-4 py-2 rounded sidebar-navlink-hover ${isActive ? 'sidebar-navlink-active font-semibold' : ''}`
-                }
-              >
-                <Truck size={16} />
-                Suppliers
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/products"
-                className={({ isActive }) =>
-                  `flex items-center gap-5 px-4 py-2 rounded sidebar-navlink-hover ${isActive ? 'sidebar-navlink-active font-semibold' : ''}`
-                }
-              >
-                <Package size={16} />
-                Products
-              </NavLink>
-            </li>
-          </ul>
+          <SidebarNavLinks />
         </nav>
       </SidebarContent>
       <SidebarFooter>
