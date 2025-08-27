@@ -1,28 +1,29 @@
-import { Navigate, Route, Routes } from 'react-router'
+import { Navigate, Outlet, Route, Routes } from 'react-router'
 import { LoginForm } from './components/forms/auth/admin/LoginForm'
 import { SignupForm } from './components/forms/auth/admin/SignupForm'
 import AuthLayout from './components/layouts/AuthLayout'
 import NotFound from './pages/NotFound'
-import SalesLoginForm from './components/forms/auth/salesPerson/SalesLoginForm'
 import { useAuthStore } from './store/authStore'
 import { useEffect, type JSX } from 'react'
 import LoadingSpinner from './components/LoadingSpinner'
+import Dashboard from './app/dashboard/Dashboard'
+import MainLayout from './components/layouts/MainLayout'
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+const ProtectedRoute = () => {
   const { isAuthenticated } = useAuthStore();
 
   if (!isAuthenticated) {
-    return <Navigate to="/admin/login" replace />
+    return <Navigate to="/login" replace />
   }
 
-  return children;
+  return <Outlet />;
 }
 
 const RedirectIfAuthenticated = ({ children }: { children: JSX.Element }) => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return user?.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/sales" replace />;
   }
 
   return children;
@@ -37,32 +38,47 @@ function App() {
   }, [checkAuth]);
 
   if (isCheckingAuth) {
-    return <LoadingSpinner/>
+    return <LoadingSpinner />
   }
-  
+
   return (
     <Routes>
-      <Route path="/" element={
-        <ProtectedRoute>
-          <div>Home Page</div>
-        </ProtectedRoute>
-      } />
-
       {/* Auth Layout */}
       <Route element={
         <RedirectIfAuthenticated>
           <AuthLayout />
         </RedirectIfAuthenticated>
       } >
-        <Route path="/login" element={<SalesLoginForm />} />
+        <Route path="/login" element={<LoginForm />} />
+        <Route path="/signup" element={<SignupForm />} />
+      </Route>
 
-        {/* Admin Auth Forms */}
-        <Route path="/admin">
-          <Route path="login" element={<LoginForm />} />
-          <Route path="signup" element={<SignupForm />} />
+      <Route element={<ProtectedRoute />}>
+        {/* Admin Routes */}
+        <Route path="/admin" element={<MainLayout />} >
+          <Route index element={<Dashboard />} />
+          <Route path="products" element={<div>Manage products page</div>} />
+          <Route path="shops" element={<div>Manage shops page</div>} />
+          <Route path="suppliers" element={<div>Manage Suppliers Page</div>} />
+          <Route path="orders/create" element={<div>Create Purchase Order Page</div>} />
+          <Route path="routes" element={<div>Manage Routes Page</div>} />
+        </Route>
+
+        {/* Sales Routes */}
+        <Route path="/sales" element={<MainLayout />} >
+          <Route index element={<div>Sales Dashboard</div>} />
+          <Route path="customers" element={<div>Manage Customers Page</div>} />
+          <Route path="orders" element={<div>Manage Sales Orders Page</div>} />
+          <Route path="deliveries" element={<div>Manage Deliveries Page</div>} />
+          <Route path="invoices" element={<div>Manage Invoices Page</div>} />
+          <Route path="payments" element={<div>Manage Payments Page</div>} />
+          <Route path="reports" element={<div>View Reports Page</div>} />
         </Route>
       </Route>
-      
+
+      {/* Redirect for root path */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+
       {/* Not Found Page */}
       <Route path="*" element={<NotFound />} />
     </Routes>
