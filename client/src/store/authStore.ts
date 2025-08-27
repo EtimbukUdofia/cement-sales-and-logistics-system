@@ -15,6 +15,8 @@ type User = {
   id: string;
   username: string;
   email: string;
+  role: "admin" | "salesPerson";
+  shopId?: string;
   createdAt: string;
   updatedAt: string;
 }
