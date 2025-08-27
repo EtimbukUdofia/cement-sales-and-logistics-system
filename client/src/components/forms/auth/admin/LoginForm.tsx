@@ -30,7 +30,7 @@ export function LoginForm({
     },
   });
 
-  const { login } = useAuthStore();
+  const { login, error } = useAuthStore();
   const navigate = useNavigate();
 
   const onSubmit = async (data: FormData) => {
@@ -42,9 +42,9 @@ export function LoginForm({
         data.password,
       );
       navigate("/");
-    } catch (error) {
-      console.error("Login failed:", error);
-      toast.error("Login failed. Please try again.");
+    } catch (err) {
+      console.error("Login failed:", err);
+      toast.error(`Login failed. ${error || "Please try again."}`);
     }
   };
 
