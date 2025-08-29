@@ -1,7 +1,7 @@
 
-import { ProductCard } from "@/components/ProductCard"
-import { ProductHeader } from "@/components/ProductHeader"
-import { AddProductCard } from "@/components/AddProductCard"
+import { ProductCard } from "@/components/products/ProductCard"
+import { ProductHeader } from "@/components/products/ProductHeader"
+import { AddProductCard } from "@/components/products/AddProductCard"
 import { products } from "@/data/products"
 
 const ProductsPage = () => {
