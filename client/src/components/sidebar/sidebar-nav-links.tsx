@@ -40,7 +40,7 @@ export function SidebarNavLinks() {
       </li>
       <li>
         <NavLink
-          to="/orders"
+          to="/admin/orders"
           className={({ isActive }) =>
             `flex items-center gap-5 px-4 py-2 rounded sidebar-navlink-hover ${isActive ? 'sidebar-navlink-active font-semibold' : ''}`
           }
