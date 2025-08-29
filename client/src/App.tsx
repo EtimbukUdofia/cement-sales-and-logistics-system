@@ -8,7 +8,7 @@ import { useEffect, type JSX } from 'react'
 import LoadingSpinner from './components/LoadingSpinner'
 import Dashboard from './pages/Admin/dashboard/Dashboard'
 import MainLayout from './components/layouts/MainLayout'
-import ProductsPage from './pages/Products'
+import ProductsPage from './pages/Admin/Products'
 
 const ProtectedRoute = () => {
   const { isAuthenticated } = useAuthStore();
