@@ -12,14 +12,17 @@ export default function MainLayout() {
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
+          "--header-height": "calc(var(--spacing) * 10)",
+          "--header-height-sm": "calc(var(--spacing) * 12)",
         } as React.CSSProperties
       }
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <Outlet />
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )
