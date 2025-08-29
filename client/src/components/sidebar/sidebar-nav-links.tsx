@@ -51,7 +51,7 @@ export function SidebarNavLinks() {
       </li>
       <li>
         <NavLink
-          to="/inventory"
+          to="/admin/inventory"
           className={({ isActive }) =>
             `flex items-center gap-5 px-4 py-2 rounded sidebar-navlink-hover ${isActive ? 'sidebar-navlink-active font-semibold' : ''}`
           }
@@ -62,7 +62,7 @@ export function SidebarNavLinks() {
       </li>
       <li>
         <NavLink
-          to="/routes"
+          to="/admin/routes"
           className={({ isActive }) =>
             `flex items-center gap-5 px-4 py-2 rounded sidebar-navlink-hover ${isActive ? 'sidebar-navlink-active font-semibold' : ''}`
           }
@@ -73,7 +73,7 @@ export function SidebarNavLinks() {
       </li>
       <li>
         <NavLink
-          to="/shops"
+          to="/admin/shops"
           className={({ isActive }) =>
             `flex items-center gap-5 px-4 py-2 rounded sidebar-navlink-hover ${isActive ? 'sidebar-navlink-active font-semibold' : ''}`
           }
@@ -84,7 +84,7 @@ export function SidebarNavLinks() {
       </li>
       <li>
         <NavLink
-          to="/reports"
+          to="/admin/reports"
           className={({ isActive }) =>
             `flex items-center gap-5 px-4 py-2 rounded sidebar-navlink-hover ${isActive ? 'sidebar-navlink-active font-semibold' : ''}`
           }
@@ -95,7 +95,7 @@ export function SidebarNavLinks() {
       </li>
       <li>
         <NavLink
-          to="/user-roles"
+          to="/admin/user-roles"
           className={({ isActive }) =>
             `flex items-center gap-5 px-4 py-2 rounded sidebar-navlink-hover ${isActive ? 'sidebar-navlink-active font-semibold' : ''}`
           }
