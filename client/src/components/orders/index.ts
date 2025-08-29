@@ -1,0 +1,6 @@
+export { OrderHeader } from "./OrderHeader"
+export { OrderInfo } from "./OrderInfo"
+export { CustomerOrderSection } from "./CustomerOrderSection"
+export { DeliveryAddressSection } from "./DeliveryAddressSection"
+export { ExpensesSection } from "./ExpensesSection"
+export { ProductsOrderedTable } from "./ProductsOrderedTable"
