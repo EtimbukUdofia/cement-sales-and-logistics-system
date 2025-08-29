@@ -24,7 +24,10 @@ export function SuppliersHeader({
       </div>
       <Button
         onClick={onNewPurchaseOrder}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2"
+        className="text-white font-medium px-4 py-2"
+        style={{
+          background: "linear-gradient(104.76deg, #00078F 24.83%, #020BCB 50.87%, #00078F 75.94%)",
+        }}
       >
         <Plus className="w-4 h-4 mr-2" />
         New Purchase Order
