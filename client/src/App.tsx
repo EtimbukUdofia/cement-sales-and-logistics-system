@@ -70,6 +70,7 @@ function App() {
           <Route path="orders/create" element={<div>Create Purchase Order Page</div>} />
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="routes" element={<RoutesPage />} />
+          <Route path="trucks" element={<div>Truck Page</div>} />
           <Route path="reports" element={<div>View Reports Page</div>} />
           <Route path="user-roles" element={<UserManagementPage />} />
         </Route>
