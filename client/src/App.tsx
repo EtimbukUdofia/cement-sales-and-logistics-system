@@ -6,8 +6,9 @@ import NotFound from './pages/NotFound'
 import { useAuthStore } from './store/authStore'
 import { useEffect, type JSX } from 'react'
 import LoadingSpinner from './components/LoadingSpinner'
-import Dashboard from './app/dashboard/Dashboard'
+import Dashboard from './pages/Admin/dashboard/Dashboard'
 import MainLayout from './components/layouts/MainLayout'
+import ProductsPage from './pages/Products'
 
 const ProtectedRoute = () => {
   const { isAuthenticated } = useAuthStore();
@@ -57,7 +58,7 @@ function App() {
         {/* Admin Routes */}
         <Route path="/admin" element={<MainLayout />} >
           <Route index element={<Dashboard />} />
-          <Route path="products" element={<div>Manage products page</div>} />
+          <Route path="products" element={<ProductsPage />} />
           <Route path="shops" element={<div>Manage shops page</div>} />
           <Route path="suppliers" element={<div>Manage Suppliers Page</div>} />
           <Route path="orders/create" element={<div>Create Purchase Order Page</div>} />
