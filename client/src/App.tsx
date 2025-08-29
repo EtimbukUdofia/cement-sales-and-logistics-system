@@ -9,6 +9,7 @@ import LoadingSpinner from './components/LoadingSpinner'
 import Dashboard from './pages/Admin/dashboard/Dashboard'
 import MainLayout from './components/layouts/MainLayout'
 import ProductsPage from './pages/Admin/Products'
+import SuppliersPage from './pages/Admin/Suppliers'
 
 const ProtectedRoute = () => {
   const { isAuthenticated } = useAuthStore();
@@ -60,7 +61,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="shops" element={<div>Manage shops page</div>} />
-          <Route path="suppliers" element={<div>Manage Suppliers Page</div>} />
+          <Route path="suppliers" element={<SuppliersPage />} />
           <Route path="orders/create" element={<div>Create Purchase Order Page</div>} />
           <Route path="routes" element={<div>Manage Routes Page</div>} />
         </Route>
