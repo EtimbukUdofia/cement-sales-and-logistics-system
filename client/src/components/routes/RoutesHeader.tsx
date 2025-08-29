@@ -8,7 +8,9 @@ export function RoutesHeader() {
         <h1 className="text-2xl font-semibold text-gray-900">Route Management</h1>
         <p className="text-sm text-gray-600">Track cement distribution from suppliers to destination</p>
       </div>
-      <Button className="bg-blue-600 hover:bg-blue-700">
+      <Button style={{
+        background: "linear-gradient(104.76deg, #00078F 24.83%, #020BCB 50.87%, #00078F 75.94%)",
+      }}>
         <Plus size={16} className="mr-2" />
         Create Route
       </Button>

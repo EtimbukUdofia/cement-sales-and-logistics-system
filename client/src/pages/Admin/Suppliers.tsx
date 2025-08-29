@@ -9,8 +9,8 @@ const SuppliersPage = () => {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="@container/main flex flex-1 flex-col gap-6">
-        <div className="flex flex-col gap-6 py-6">
+      <div className="@container/main flex flex-1 flex-col gap-4 sm:gap-6">
+        <div className="flex flex-col gap-4 sm:gap-6 py-4 sm:py-6">
 
           {/* Header */}
           <SuppliersHeader
@@ -20,8 +20,8 @@ const SuppliersPage = () => {
           />
 
           {/* Suppliers Grid */}
-          <div className="px-4 lg:px-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="px-4 sm:px-6 lg:px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
               {suppliers.map((supplier) => (
                 <SupplierCard
                   key={supplier.id}
@@ -32,7 +32,7 @@ const SuppliersPage = () => {
           </div>
 
           {/* Recent Purchase Orders */}
-          <div className="px-4 lg:px-6">
+          <div className="px-4 sm:px-6 lg:px-6">
             <PurchaseOrdersTable orders={recentPurchaseOrders} />
           </div>
 
