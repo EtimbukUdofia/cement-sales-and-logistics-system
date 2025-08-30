@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: { type: String, required: true, index: true },
   variant: { type: String },
-  brand: { type: String },
+  brand: { type: String, index: true }, // i may make this an enum
   size: { type: Number, required: true },
   price: { type: Number, required: true },
   imageUrl: { type: String },
