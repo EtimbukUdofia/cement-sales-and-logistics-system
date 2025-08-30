@@ -79,12 +79,12 @@ function App() {
         {/* Sales Routes */}
         <Route path="/sales" element={<MainLayout />} >
           <Route index element={<div>Sales Dashboard</div>} />
-          <Route path="customers" element={<div>Manage Customers Page</div>} />
+          {/* <Route path="customers" element={<div>Manage Customers Page</div>} /> */}
           <Route path="orders" element={<div>Manage Sales Orders Page</div>} />
-          <Route path="deliveries" element={<div>Manage Deliveries Page</div>} />
-          <Route path="invoices" element={<div>Manage Invoices Page</div>} />
-          <Route path="payments" element={<div>Manage Payments Page</div>} />
           <Route path="reports" element={<div>View Reports Page</div>} />
+          <Route path="deliveries" element={<div>Manage Deliveries Page</div>} />
+          {/* <Route path="invoices" element={<div>Manage Invoices Page</div>} />
+          <Route path="payments" element={<div>Manage Payments Page</div>} /> */}
         </Route>
       </Route>
 

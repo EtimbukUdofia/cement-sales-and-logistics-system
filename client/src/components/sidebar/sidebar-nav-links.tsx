@@ -22,11 +22,11 @@ export function SidebarNavLinks() {
 
   const salesPersonNavItems = [
     { to: "/sales", icon: LayoutDashboard, label: "Dashboard", end: true },
-    { to: "/sales/customers", icon: Users, label: "Customers" },
+    // { to: "/sales/customers", icon: Users, label: "Customers" },
     { to: "/sales/orders", icon: ShoppingCart, label: "Orders" },
     { to: "/sales/deliveries", icon: Truck, label: "Deliveries" },
-    { to: "/sales/invoices", icon: Package, label: "Invoices" },
-    { to: "/sales/payments", icon: Store, label: "Payments" },
+    // { to: "/sales/invoices", icon: Package, label: "Invoices" },
+    // { to: "/sales/payments", icon: Store, label: "Payments" },
     { to: "/sales/reports", icon: BarChart2, label: "Reports" },
   ];
 
