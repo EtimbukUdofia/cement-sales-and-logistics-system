@@ -1,0 +1,195 @@
+import type { Response } from 'express';
+import mongoose from "mongoose";
+import type { AuthRequest } from '../interfaces/interface.ts';
+import Product from '../models/Product.ts';
+import { z } from 'zod';
+import { escapeRegExp } from '../utils.ts';
+
+const createProductSchema = z.object({
+  name: z.string().min(1, 'Name is required').transform((s) => s.trim()),
+  variant: z.string().optional().transform((s) => s?.trim() || ''),
+  brand: z.string().min(1, 'Brand is required').transform((s) => s.trim()),
+  size: z.preprocess((v) => Number(v), z.number().positive('Size must be a positive number')),
+  price: z.preprocess((v) => Number(v), z.number().positive('Price must be a positive number')),
+  imageUrl: z.string().url('Invalid image URL').optional().transform((s) => s?.trim() || ''),
+  description: z.string().optional().transform((s) => s?.trim() || ''),
+  isActive: z.boolean().optional().default(true),
+});
+
+export const createProduct = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const parsed = createProductSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ success: false, errors: z.treeifyError(parsed.error) });
+      return;
+    }
+
+    const { name, brand, price, size } = parsed.data;
+
+    const existingProduct = await Product.findOne({ name, brand });
+    if (existingProduct) {
+      res.status(409).json({ success: false, message: 'Product with the same name and brand already exists' });
+      return;
+    }
+
+    const newProduct = new Product({ name, brand, price, size });
+    const result = await newProduct.save();
+
+    res.status(201).json({ success: true, message: 'Product created successfully', product: result });
+  } catch (error) {
+    console.error('Product Creation Error:', (error as Error).message);
+    const errAny = error as any;
+    if (errAny?.code === 11000 || errAny?.codeName === 'DuplicateKey') {
+      const conflictFields = errAny.keyValue ? Object.keys(errAny.keyValue) : ['unknown'];
+      const detail = errAny.keyValue ?? { message: errAny.message };
+      res.status(409).json({
+        success: false,
+        message: `Duplicate ${conflictFields.join(', ')} value(s)`,
+        detail
+      });
+      return;
+    }
+    res.status(500).json({ success: false, message: 'Server error during product creation' });
+  }
+};
+
+export const getProducts = async (_req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const products = await Product.find();
+    res.status(200).json({ success: true, products });
+  } catch (error) {
+    console.error('Get Products Error:', (error as Error).message);
+    res.status(500).json({ success: false, message: 'Server error fetching products' });
+  }
+};
+
+export const getProductById = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  if (!id) {
+    res.status(400).json({ success: false, message: 'Product id is required' });
+    return;
+  }
+
+  // check if valid mongoose id
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ success: false, message: 'Invalid product id' });
+    return;
+  }
+
+  try {
+    const product = await Product.findById(id);
+    if (!product) {
+      res.status(404).json({ success: false, message: 'Product not found' });
+      return;
+    }
+
+    res.status(200).json({ success: true, product });
+  } catch (error) {
+    console.error('Get Product By ID Error:', (error as Error).message);
+    res.status(500).json({ success: false, message: 'Server error fetching product' });
+  }
+};
+
+export const updateProduct = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  if (!id) {
+    res.status(400).json({ success: false, message: 'Product id is required' });
+    return;
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ success: false, message: 'Invalid product id' });
+    return;
+  }
+
+  try {
+    const parsed = createProductSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ success: false, errors: z.treeifyError(parsed.error) });
+      return;
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(id, parsed.data, { new: true });
+    if (!updatedProduct) {
+      res.status(404).json({ success: false, message: 'Product not found' });
+      return;
+    }
+
+    res.status(200).json({ success: true, message: 'Product updated successfully', product: updatedProduct });
+  } catch (error) {
+    console.error('Update Product Error:', (error as Error).message);
+    const errAny = error as any;
+    if (errAny?.code === 11000 || errAny?.codeName === 'DuplicateKey') {
+      const conflictFields = errAny.keyValue ? Object.keys(errAny.keyValue) : ['unknown'];
+      const detail = errAny.keyValue ?? { message: errAny.message };
+      res.status(409).json({
+        success: false,
+        message: `Duplicate ${conflictFields.join(', ')} value(s)`,
+        detail
+      });
+      return;
+    }
+    res.status(500).json({ success: false, message: 'Server error updating product' });
+  }
+};
+
+export const deleteProduct = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  if (!id) {
+    res.status(400).json({ success: false, message: 'Product id is required' });
+    return;
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ success: false, message: 'Invalid product id' });
+    return;
+  }
+
+  try {
+    const deletedProduct = await Product.findByIdAndDelete(id);
+    if (!deletedProduct) {
+      res.status(404).json({ success: false, message: 'Product not found' });
+      return;
+    }
+
+    res.status(200).json({ success: true, message: 'Product deleted successfully', product: deletedProduct });
+  } catch (error) {
+    console.error('Delete Product Error:', (error as Error).message);
+    res.status(500).json({ success: false, message: 'Server error deleting product' });
+  }
+};
+
+// Get distinct product brands
+export const getDistinctBrands = async (_req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const brands = (await Product.distinct('brand')).filter(Boolean).sort();
+    res.status(200).json({ success: true, brands });
+  } catch (error) {
+    console.error('Get Distinct Brands Error:', (error as Error).message);
+    res.status(500).json({ success: false, message: 'Server error fetching brands' });
+  }
+};
+
+//  Get products by brand
+export const getProductsByBrand = async (req: AuthRequest, res: Response): Promise<void> => {
+  const rawBrand = req.params.brand;
+
+  if (!rawBrand || !rawBrand.trim()) {
+    res.status(400).json({ success: false, message: 'Brand is required' });
+    return;
+  }
+
+  const brand = rawBrand.trim();
+  try {
+    // case-insensitive exact match (safe)
+    const regex = new RegExp(`^${escapeRegExp(brand)}$`, 'i');
+    const products = await Product.find({ brand: regex });
+    res.status(200).json({ success: true, products });
+  } catch (error) {
+    console.error('Get Products By Brand Error:', (error as Error).message);
+    res.status(500).json({ success: false, message: 'Server error fetching products by brand' });
+  }
+};
