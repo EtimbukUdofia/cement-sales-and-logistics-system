@@ -1,0 +1,39 @@
+import mongoose from "mongoose";
+
+const salesOrderSchema = new mongoose.Schema({
+  orderNumber: { type: String, required: true, unique: true }, // Unique
+
+  customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true }, // Reference to Customer model
+
+  shop: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true }, // Reference to Shop model
+
+  items: [{ 
+    product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true }, // Reference to Product model
+    quantity: { type: Number, required: true }, // Quantity ordered
+    unitPrice: { type: Number, required: true }, // Price per unit
+    totalPrice: { type: Number, required: true } // Total price for the item
+  }], // List
+  
+  totalAmount: { type: Number, required: true }, // Total amount for the order
+
+  paymentMethod: { type: String, enum: ['cash', 'pos', 'transfer'], required: true }, // Payment method
+
+  orderDate: { type: Date, default: Date.now }, // Date of the order
+
+  deliveryDate: { type: Date }, // Expected delivery date
+
+  status: { type: String, enum: ['Pending', 'Confirmed', 'Delivered', 'Cancelled'], default: 'Pending' }, // Order status
+
+  shippedDate: { type: Date }, // Actual date of shipment
+
+  deliveredDate: { type: Date }, // Actual date of delivery
+
+  deliveryAddress: { type: String, required: true }, // Delivery address
+
+  salesPerson: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Reference to User model
+
+  notes: { type: String }, // Additional notes
+}, { timestamps: true });
+
+const SalesOrder = mongoose.model('SalesOrder', salesOrderSchema);
+export default SalesOrder;
