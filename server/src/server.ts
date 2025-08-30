@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 
 import connectDB from './db/connectDB.js';
 import authRotes from './routes/auth.route.ts';
+import userRoutes from './routes/user.route.ts';
+import { verifyToken } from './middlewares/verifyToken.ts';
 
 dotenv.config();
 
@@ -25,6 +27,10 @@ app.get('/', (_req: Request, res: Response) => {
 });
 
 app.use('/api/v0/auth', authRotes);
+
+// protected routes. check if authenticated and role is admin
+app.use(verifyToken);
+app.use('/api/v0/users', userRoutes);
 
 app.get('/api/v0/ping', (_req: Request, res: Response) => { 
   res.json({ message: 'pong' });
