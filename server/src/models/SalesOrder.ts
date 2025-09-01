@@ -28,7 +28,7 @@ const salesOrderSchema = new mongoose.Schema({
 
   deliveredDate: { type: Date }, // Actual date of delivery
 
-  deliveryAddress: { type: String, required: true }, // Delivery address
+  deliveryAddress: { type: String }, // Delivery address
 
   salesPerson: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Reference to User model
 
