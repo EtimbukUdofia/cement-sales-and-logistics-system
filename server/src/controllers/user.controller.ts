@@ -6,7 +6,18 @@ import bcrypt from 'bcryptjs';
 
 // Add a new User. This is for the admin to add a new sales person or admin
 const addUser = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { username, email, password, role } = req.body;
+  const { username, email, password, role, shopId } = req.body ?? {};
+
+  if (shopId && !mongoose.Types.ObjectId.isValid(shopId)) {
+    res.status(400).json({ success: false, message: 'Invalid shop id' });
+    return;
+  }
+
+  // roles === salesperson must also provide shopid
+  if (role === 'salesPerson' && !shopId) {
+    res.status(400).json({ success: false, message: 'shopId is required for salesPerson role' });
+    return;
+  }
 
   try {
     if (!username || !email || !password || !role) {
@@ -27,7 +38,8 @@ const addUser = async (req: AuthRequest, res: Response): Promise<void> => {
       username: String(username).trim(),
       email: normalizedEmail,
       password: hashedPassword,
-      role
+      role,
+      shopId: shopId || undefined
     });
 
     const result = await newUser.save();
@@ -87,10 +99,21 @@ const getUserById = async (req: AuthRequest, res: Response): Promise<void> => {
   }
 };
 
+// Get all salesPersons
+const getAllSalesPersons = async (_req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const salesPersons = await User.find({ role: 'salesPerson' }).select('-password -__v');
+    res.status(200).json({ success: true, salesPersons });
+  } catch (error) {
+    console.error('Get All SalesPersons Error:', (error as Error).message);
+    res.status(500).json({ success: false, message: 'Server error fetching sales persons' });
+  }
+};
+
 // Update an existing User
 const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
   const id = req.params.id;
-  const { username, email, role, password } = req.body;
+  const { username, email, role, password, shopId } = req.body ?? {};
 
   if (!id) {
     res.status(400).json({ success: false, message: 'User id is required' });
@@ -102,7 +125,21 @@ const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
     return;
   }
 
+  if (shopId && !mongoose.Types.ObjectId.isValid(shopId)) {
+    res.status(400).json({ success: false, message: 'Invalid shop id' });
+    return;
+  }
+
   try {
+    // if shopid check if that shop exists
+    if (shopId) {
+      const existingShop = await mongoose.model('Shop').findById(shopId).lean();
+      if (!existingShop) {
+        res.status(404).json({ success: false, message: 'Shop not found' });
+        return;
+      }
+    }
+    
     const user = await User.findById(id);
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
@@ -118,10 +155,16 @@ const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
         return;
       }
     }
+    
+    if (role && role === 'salesPerson' && !shopId) {
+      res.status(400).json({ success: false, message: 'shopId is required for salesPerson role' });
+      return;
+    }
 
     user.username = username || user.username;
     user.email = normalizedEmail || user.email;
     user.role = role || user.role;
+    user.shopId = shopId !== undefined ? shopId : user.shopId;
 
     if (password) {
       user.password = await bcrypt.hash(password, 10);
@@ -178,6 +221,7 @@ export {
   addUser,
   getAllUsers,
   getUserById,
+  getAllSalesPersons,
   updateUser,
   deleteUser
 };
