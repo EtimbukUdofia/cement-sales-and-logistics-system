@@ -36,6 +36,15 @@ const RedirectIfAuthenticated = ({ children }: { children: JSX.Element }) => {
   return children;
 }
 
+// check allowed roles for a route
+const RoleBasedRoute = ({ allowedRoles }: { allowedRoles: string[] }) => {
+  const { user } = useAuthStore();
+  if (user && allowedRoles.includes(user.role)) {
+    return <Outlet />;
+  }
+  return <Navigate to="/login" replace />;
+}
+
 function App() {
   const { checkAuth, isCheckingAuth } = useAuthStore();
 
@@ -62,29 +71,33 @@ function App() {
 
       <Route element={<ProtectedRoute />}>
         {/* Admin Routes */}
-        <Route path="/admin" element={<MainLayout />} >
-          <Route index element={<Dashboard />} />
-          <Route path="products" element={<ProductsPage />} />
-          <Route path="shops" element={<div>Manage shops page</div>} />
-          <Route path="suppliers" element={<SuppliersPage />} />
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="orders/create" element={<div>Create Purchase Order Page</div>} />
-          <Route path="inventory" element={<InventoryPage />} />
-          <Route path="routes" element={<RoutesPage />} />
-          <Route path="trucks" element={<TrucksPage />} />
-          <Route path="reports" element={<div>View Reports Page</div>} />
-          <Route path="user-roles" element={<UserManagementPage />} />
+        <Route element={<RoleBasedRoute allowedRoles={['admin']} />} >
+          <Route path="/admin" element={<MainLayout />} >
+            <Route index element={<Dashboard />} />
+            <Route path="products" element={<ProductsPage />} />
+            <Route path="shops" element={<div>Manage shops page</div>} />
+            <Route path="suppliers" element={<SuppliersPage />} />
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="orders/create" element={<div>Create Purchase Order Page</div>} />
+            <Route path="inventory" element={<InventoryPage />} />
+            <Route path="routes" element={<RoutesPage />} />
+            <Route path="trucks" element={<TrucksPage />} />
+            <Route path="reports" element={<div>View Reports Page</div>} />
+            <Route path="user-roles" element={<UserManagementPage />} />
+          </Route>
         </Route>
 
         {/* Sales Routes */}
-        <Route path="/sales" element={<MainLayout />} >
-          <Route index element={<div>Sales Dashboard</div>} />
-          {/* <Route path="customers" element={<div>Manage Customers Page</div>} /> */}
-          <Route path="orders" element={<div>Manage Sales Orders Page</div>} />
-          <Route path="reports" element={<div>View Reports Page</div>} />
-          <Route path="deliveries" element={<div>Manage Deliveries Page</div>} />
-          {/* <Route path="invoices" element={<div>Manage Invoices Page</div>} />
+        <Route element={<RoleBasedRoute allowedRoles={['salesPerson']} />} >
+          <Route path="/sales" element={<MainLayout />} >
+            <Route index element={<div>Sales Dashboard</div>} />
+            {/* <Route path="customers" element={<div>Manage Customers Page</div>} /> */}
+            <Route path="orders" element={<div>Manage Sales Orders Page</div>} />
+            <Route path="reports" element={<div>View Reports Page</div>} />
+            <Route path="deliveries" element={<div>Manage Deliveries Page</div>} />
+            {/* <Route path="invoices" element={<div>Manage Invoices Page</div>} />
           <Route path="payments" element={<div>Manage Payments Page</div>} /> */}
+          </Route>
         </Route>
       </Route>
 
