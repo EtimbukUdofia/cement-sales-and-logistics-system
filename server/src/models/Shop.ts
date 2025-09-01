@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const shopSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  address: { type: String },
+  address: { type: String, required: true },
   manager: {type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Reference to User model
   phone: { type: String, required: true },
   email: { type: String },
