@@ -71,6 +71,8 @@ export const createShop = async (req: AuthRequest, res: Response): Promise<void>
         res.status(404).json({ success: false, message: 'Manager user not found' });
         return;
       }
+
+      // i might check for valid roles here
     }
 
     const shopData: Partial<typeof Shop.prototype> = {
