@@ -2,6 +2,7 @@ import type { Response } from 'express';
 import mongoose from "mongoose";
 import type { AuthRequest } from '../interfaces/interface.ts';
 import Product from '../models/Product.ts';
+import Inventory from '../models/Inventory.ts';
 import { z } from 'zod';
 import { escapeRegExp } from '../utils.ts';
 
@@ -60,6 +61,77 @@ export const getProducts = async (_req: AuthRequest, res: Response): Promise<voi
   } catch (error) {
     console.error('Get Products Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching products' });
+  }
+};
+
+export const getProductsWithInventory = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { shopId } = req.params;
+
+  if (!shopId) {
+    res.status(400).json({ success: false, message: 'Shop ID is required' });
+    return;
+  }
+
+  // check if valid mongoose id
+  if (!mongoose.Types.ObjectId.isValid(shopId)) {
+    res.status(400).json({ success: false, message: 'Invalid shop ID' });
+    return;
+  }
+
+  try {
+    const productsWithInventory = await Product.aggregate([
+      { $match: { isActive: true } },
+      {
+        $lookup: {
+          from: 'inventories',
+          let: { productId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$product', '$$productId'] },
+                    { $eq: ['$shop', new mongoose.Types.ObjectId(shopId)] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'inventory'
+        }
+      },
+      {
+        $addFields: {
+          availableStock: {
+            $ifNull: [{ $arrayElemAt: ['$inventory.quantity', 0] }, 0]
+          }
+        }
+      },
+      {
+        $project: {
+          id: '$_id',
+          name: 1,
+          variant: 1,
+          brand: 1,
+          size: 1,
+          price: 1,
+          imageUrl: 1,
+          description: 1,
+          availableStock: 1,
+          _id: 0
+        }
+      },
+      { $sort: { brand: 1, name: 1 } }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      products: productsWithInventory,
+      shopId
+    });
+  } catch (error) {
+    console.error('Get Products with Inventory Error:', (error as Error).message);
+    res.status(500).json({ success: false, message: 'Server error fetching products with inventory' });
   }
 };
 

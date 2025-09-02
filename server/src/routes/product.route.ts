@@ -1,10 +1,11 @@
 import express from 'express';
-import { createProduct, deleteProduct, getDistinctBrands, getProductById, getProducts, getProductsByBrand, updateProduct } from '../controllers/product.controller.ts';
+import { createProduct, deleteProduct, getDistinctBrands, getProductById, getProducts, getProductsWithInventory, getProductsByBrand, updateProduct } from '../controllers/product.controller.ts';
 import isAdmin from '../middlewares/isAdmin.ts';
 
 const router = express.Router();
 
 router.get('/', getProducts);
+router.get('/with-inventory/:shopId', getProductsWithInventory);
 router.get('/:id', getProductById);
 router.post('/', isAdmin, createProduct);
 router.put('/:id', isAdmin, updateProduct);
