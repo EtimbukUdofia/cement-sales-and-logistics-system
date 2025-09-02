@@ -18,7 +18,9 @@ interface SalesOrderData {
     unitPrice: number;
     totalPrice: number;
   }>;
+  totalAmount: number;
   paymentMethod: 'cash' | 'pos' | 'transfer';
+  salesPerson: string;
   deliveryAddress?: string;
   notes?: string;
 }
