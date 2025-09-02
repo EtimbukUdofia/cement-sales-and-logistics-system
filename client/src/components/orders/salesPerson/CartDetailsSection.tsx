@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Minus, Plus, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useCartStore, type CartItem } from "@/store/cartStore"
+import { useCheckout } from "@/hooks/useCheckout"
 import { toast } from "sonner"
 
 export function CartDetailsSection() {
@@ -11,6 +12,7 @@ export function CartDetailsSection() {
   const updateQuantity = useCartStore(state => state.updateQuantity);
   const getTotalItems = useCartStore(state => state.getTotalItems);
   const getTotalPrice = useCartStore(state => state.getTotalPrice);
+  const { processCheckout, isProcessing, canCheckout } = useCheckout();
 
   const handleIncreaseQuantity = (item: CartItem) => {
     if (item.quantity < item.availableStock) {
@@ -29,15 +31,28 @@ export function CartDetailsSection() {
     toast.success(`${item.name} removed from cart`);
   };
 
-  const handleCheckout = () => {
-    if (items.length === 0) {
-      toast.error("Your cart is empty");
+  const handleCheckout = async () => {
+    if (!canCheckout) {
+      toast.error("Cannot checkout. Please check your cart and shop selection.");
       return;
     }
 
-    // TODO: Implement checkout functionality
-    toast.success("Proceeding to checkout...");
-    console.log("Checkout items:", items);
+    // For now, use default checkout data
+    // In a real app, this would come from a checkout form
+    const checkoutData = {
+      customerName: "Walk-in Customer",
+      customerPhone: "+234-000-000-0000",
+      paymentMethod: "cash" as const,
+      deliveryAddress: "Pick up at store",
+      notes: "Quick sale order"
+    };
+
+    const result = await processCheckout(checkoutData);
+
+    if (result.success) {
+      console.log("Order created:", result.order);
+      console.log("Order number:", result.orderNumber);
+    }
   };
 
   const totalItems = getTotalItems();
@@ -131,8 +146,9 @@ export function CartDetailsSection() {
           <Button
             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             onClick={handleCheckout}
+            disabled={!canCheckout || isProcessing}
           >
-            Checkout
+            {isProcessing ? "Processing..." : "Checkout"}
           </Button>
         </div>
       </CardContent>
