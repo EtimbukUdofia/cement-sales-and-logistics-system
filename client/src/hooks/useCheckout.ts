@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useCartStore } from '@/store/cartStore';
+import { useCartStore, type CartItem } from '@/store/cartStore';
 import { useShop } from '@/hooks/useShop';
 import { useAuthStore } from '@/store/authStore';
-import { apiClient, type SalesOrderData } from '@/lib/api';
+import { apiClient, type SalesOrderData, type CustomerData } from '@/lib/api';
 import { toast } from 'sonner';
 
 interface CheckoutData {
@@ -12,6 +12,14 @@ interface CheckoutData {
   deliveryAddress?: string;
   paymentMethod: 'cash' | 'pos' | 'transfer';
   notes?: string;
+}
+
+interface Customer {
+  _id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
 }
 
 export function useCheckout() {
@@ -44,28 +52,47 @@ export function useCheckout() {
     setIsProcessing(true);
 
     try {
-      // First, create customer if needed (for now, we'll skip this and use dummy customer)
-      // In a real app, you'd check if customer exists or create new one
-      const dummyCustomerId = "68b64fa84e118a33a3d06250"; // This should be replaced with actual customer creation
+      // Create customer first
+      const customerData: CustomerData = {
+        name: checkoutData.customerName,
+        phone: checkoutData.customerPhone,
+        email: checkoutData.customerEmail,
+        address: checkoutData.deliveryAddress
+      };
+
+      const customerResponse = await apiClient.createCustomer(customerData);
+
+      if (!customerResponse.success) {
+        throw new Error(customerResponse.message || 'Failed to create customer');
+      }
+
+      const customerId = (customerResponse.customer as Customer)._id;
 
       // Generate unique order number
       const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+      // Calculate total amount
+      const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
       // Prepare order data
       const orderData: SalesOrderData = {
         orderNumber,
-        customer: dummyCustomerId,
+        customer: customerId,
         shop: currentShop._id,
-        items: items.map(item => ({
+        items: items.map((item: CartItem) => ({
           product: item.id,
           quantity: item.quantity,
           unitPrice: item.price,
           totalPrice: item.price * item.quantity
         })),
+        totalAmount,
         paymentMethod: checkoutData.paymentMethod,
+        salesPerson: user.id,
         deliveryAddress: checkoutData.deliveryAddress,
         notes: checkoutData.notes
       };
+
+      console.log(orderData);
 
       // Create the order
       const response = await apiClient.createSalesOrder(orderData);
