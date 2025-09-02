@@ -2,7 +2,6 @@ import type { Response } from 'express';
 import mongoose from "mongoose";
 import type { AuthRequest } from '../interfaces/interface.ts';
 import Product from '../models/Product.ts';
-import Inventory from '../models/Inventory.ts';
 import { z } from 'zod';
 import { escapeRegExp } from '../utils.ts';
 
