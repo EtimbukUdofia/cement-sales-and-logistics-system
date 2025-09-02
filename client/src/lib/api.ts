@@ -48,10 +48,17 @@ class ApiClient {
         'Content-Type': 'application/json',
         ...options.headers,
       },
+      signal: options.signal, // Support for AbortController
     };
 
     try {
       const response = await fetch(url, { ...defaultOptions, ...options });
+
+      // Check if the request was aborted
+      if (options.signal?.aborted) {
+        throw new Error('Request was aborted');
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -60,22 +67,27 @@ class ApiClient {
 
       return data;
     } catch (error) {
+      // Don't log errors for aborted requests
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error;
+      }
+
       console.error(`API request failed: ${endpoint}`, error);
       throw error;
     }
   }
 
   // Product API methods
-  async getProducts() {
-    return this.request('/products');
+  async getProducts(options?: RequestInit) {
+    return this.request('/products', options);
   }
 
-  async getProductsWithInventory(shopId: string) {
-    return this.request(`/products/with-inventory/${shopId}`);
+  async getProductsWithInventory(shopId: string, options?: RequestInit) {
+    return this.request(`/products/with-inventory/${shopId}`, options);
   }
 
-  async getProductById(id: string) {
-    return this.request(`/products/${id}`);
+  async getProductById(id: string, options?: RequestInit) {
+    return this.request(`/products/${id}`, options);
   }
 
   // Sales Order API methods
@@ -95,12 +107,12 @@ class ApiClient {
   }
 
   // Shop API methods
-  async getShops() {
-    return this.request('/shops');
+  async getShops(options?: RequestInit) {
+    return this.request('/shops', options);
   }
 
-  async getShopById(id: string) {
-    return this.request(`/shops/${id}`);
+  async getShopById(id: string, options?: RequestInit) {
+    return this.request(`/shops/${id}`, options);
   }
 
   // Customer API methods

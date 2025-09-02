@@ -120,6 +120,9 @@ export function ProductGrid({ searchTerm = '', selectedBrand = 'all' }: ProductG
       return;
     }
 
+    const abortController = new AbortController();
+    let isMounted = true;
+
     const fetchProducts = async () => {
       try {
         setLoading(true);
@@ -127,6 +130,72 @@ export function ProductGrid({ searchTerm = '', selectedBrand = 'all' }: ProductG
         // For admin users, use a fallback shop or show sample data
         if (user?.role === 'admin' && !currentShop) {
           // Fallback to sample data for admin users without a shop
+          if (isMounted) {
+            setProducts([
+              {
+                id: '1',
+                name: 'Dangote Cement',
+                variant: '3X',
+                brand: 'dangote',
+                size: 50,
+                imageUrl: dangote3x,
+                price: 5000,
+                availableStock: 100
+              },
+              {
+                id: '2',
+                name: 'Dangote Cement',
+                variant: 'Falcon',
+                brand: 'dangote',
+                size: 50,
+                imageUrl: dangoteFalcon,
+                price: 5200,
+                availableStock: 150
+              },
+              {
+                id: '3',
+                name: 'BUA Cement',
+                variant: 'XL',
+                brand: 'bua',
+                size: 50,
+                imageUrl: bua,
+                price: 4800,
+                availableStock: 75
+              }
+            ]);
+          }
+          return;
+        }
+
+        if (!currentShop) {
+          throw new Error('No shop available');
+        }
+
+        const response = await apiClient.getProductsWithInventory(currentShop._id, {
+          signal: abortController.signal
+        });
+
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        if (response.success) {
+          // Ensure response.products is an array of products before updating state
+          if (isMounted) {
+            setProducts(Array.isArray(response.products) ? (response.products as Product[]) : []);
+          }
+        } else {
+          throw new Error(response.message || 'Failed to fetch products');
+        }
+      } catch (err) {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        console.error('Error fetching products:', err);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch products');
+          // Fallback to sample data for development
           setProducts([
             {
               id: '1',
@@ -159,63 +228,20 @@ export function ProductGrid({ searchTerm = '', selectedBrand = 'all' }: ProductG
               availableStock: 75
             }
           ]);
-          return;
         }
-
-        if (!currentShop) {
-          throw new Error('No shop available');
-        }
-
-        const response = await apiClient.getProductsWithInventory(currentShop._id);
-
-        if (response.success) {
-          // Ensure response.products is an array of products before updating state
-          setProducts(Array.isArray(response.products) ? (response.products as Product[]) : []);
-        } else {
-          throw new Error(response.message || 'Failed to fetch products');
-        }
-      } catch (err) {
-        console.error('Error fetching products:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch products');
-        // Fallback to sample data for development
-        setProducts([
-          {
-            id: '1',
-            name: 'Dangote Cement',
-            variant: '3X',
-            brand: 'dangote',
-            size: 50,
-            imageUrl: dangote3x,
-            price: 5000,
-            availableStock: 100
-          },
-          {
-            id: '2',
-            name: 'Dangote Cement',
-            variant: 'Falcon',
-            brand: 'dangote',
-            size: 50,
-            imageUrl: dangoteFalcon,
-            price: 5200,
-            availableStock: 150
-          },
-          {
-            id: '3',
-            name: 'BUA Cement',
-            variant: 'XL',
-            brand: 'bua',
-            size: 50,
-            imageUrl: bua,
-            price: 4800,
-            availableStock: 75
-          }
-        ]);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchProducts();
+
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
   }, [currentShop, user?.role]);  // Filter products based on search term and selected brand
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

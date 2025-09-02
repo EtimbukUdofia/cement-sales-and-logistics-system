@@ -18,7 +18,7 @@ interface ShopContextType {
   currentShop: Shop | null;
   loading: boolean;
   error: string | null;
-  refreshShops: () => Promise<void>;
+  refreshShops: (abortSignal?: AbortSignal) => Promise<void>;
 }
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -33,7 +33,7 @@ function ShopProvider({ children }: ShopProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refreshShops = useCallback(async () => {
+  const refreshShops = useCallback(async (abortSignal?: AbortSignal) => {
     try {
       setLoading(true);
       setError(null);
@@ -45,28 +45,47 @@ function ShopProvider({ children }: ShopProviderProps) {
       }
 
       // Fetch the user's assigned shop
-      const response = await apiClient.getShopById(user.shopId);
+      const response = await apiClient.getShopById(user.shopId, {
+        signal: abortSignal
+      });
+
+      if (abortSignal?.aborted) {
+        return;
+      }
+
       if (response.success && response.shop) {
         setCurrentShop(response.shop as Shop);
       } else {
         throw new Error(response.message || 'Failed to fetch assigned shop');
       }
     } catch (err) {
+      if (abortSignal?.aborted) {
+        return;
+      }
+
       console.error('Error fetching shop:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch shop');
       setCurrentShop(null);
     } finally {
-      setLoading(false);
+      if (!abortSignal?.aborted) {
+        setLoading(false);
+      }
     }
   }, [user]);
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     if (user) {
-      refreshShops();
+      refreshShops(abortController.signal);
     } else {
       setCurrentShop(null);
       setLoading(false);
     }
+
+    return () => {
+      abortController.abort();
+    };
   }, [user, refreshShops]);
 
   const value: ShopContextType = {
