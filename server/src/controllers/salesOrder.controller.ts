@@ -49,8 +49,38 @@ export const getSalesOrderById = async (req: AuthRequest, res: Response): Promis
 export const createSalesOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   const { orderNumber, customer, shop, items, paymentMethod, salesPerson } = req.body;
 
-  if (!orderNumber || !customer || !shop || !Array.isArray(items) || items.length === 0 || !paymentMethod || !salesPerson) {
-    res.status(400).json({ success: false, message: 'Missing required fields' });
+  if (!orderNumber || typeof orderNumber !== 'string' || orderNumber.trim() === '') {
+    res.status(400).json({ success: false, message: 'orderNumber is required and must be a non-empty string' });
+    return;
+  }
+
+  if (!customer) {
+    res.status(400).json({ success: false, message: 'customer id is required' });
+    return;
+  }
+
+  if (!shop) {
+    res.status(400).json({ success: false, message: 'shop id is required' });
+    return;
+  }
+
+  if (!Array.isArray(items)) {
+    res.status(400).json({ success: false, message: 'items is required and must be an array' });
+    return;
+  }
+
+  if (items.length === 0) {
+    res.status(400).json({ success: false, message: 'items must contain at least one item' });
+    return;
+  }
+
+  if (!paymentMethod || typeof paymentMethod !== 'string' || paymentMethod.trim() === '') {
+    res.status(400).json({ success: false, message: 'paymentMethod is required and must be a non-empty string' });
+    return;
+  }
+
+  if (!salesPerson) {
+    res.status(400).json({ success: false, message: 'salesPerson is required' });
     return;
   }
 
@@ -70,7 +100,7 @@ export const createSalesOrder = async (req: AuthRequest, res: Response): Promise
       res.status(400).json({ success: false, message: 'Each item must include a valid quantity > 0' });
       return;
     }
-    if (typeof item.price !== 'number' || item.unitPrice < 0) {
+    if (typeof item.unitPrice !== 'number' || item.unitPrice < 0) {
       res.status(400).json({ success: false, message: 'Each item must include a valid price >= 0' });
       return;
     }
