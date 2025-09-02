@@ -19,8 +19,6 @@ type User = {
   email: string;
   role: "admin" | "salesPerson";
   shopId?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 type AuthState = {
@@ -69,7 +67,9 @@ export const useAuthStore = create<AuthState>()((set) => ({
     set({ isCheckingAuth: true, error: null });
     try {
       const response = await axios.get(`${API_URL}/check-auth`);
+      console.log('CheckAuth response:', response.data);
       set({ user: response.data.user, isAuthenticated: true, isCheckingAuth: false });
+      console.log('CheckAuth user state set:', response.data.user);
     } catch (error) {
       let errorMessage = "An error occurred while checking authentication";
       if (axios.isAxiosError(error) && error.response && error.response.status !== 401) {
@@ -87,7 +87,9 @@ export const useAuthStore = create<AuthState>()((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await axios.post(`${API_URL}/login`, { email, password });
+      console.log('Login response:', response.data);
       set({ user: response.data.user, isAuthenticated: true, isLoading: false });
+      console.log('User state set:', response.data.user);
     } catch (error) {
       let errorMessage = "An error occurred while logging in";
       if (axios.isAxiosError(error) && error.response) {
