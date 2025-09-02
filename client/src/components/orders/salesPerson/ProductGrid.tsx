@@ -3,7 +3,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useCartStore } from "@/store/cartStore"
+import { useAuthStore } from "@/store/authStore"
 import { toast } from "sonner"
+import { useState, useEffect } from "react"
+import { apiClient } from "@/lib/api"
+import { useShop } from "@/hooks/useShop"
 import dangote3x from '@/assets/products/dangote-3x-cement.png';
 import dangoteFalcon from '@/assets/products/dangote-falcon-cement.png';
 import bua from '@/assets/products/bua-cement.jpg';
@@ -103,40 +107,116 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ searchTerm = '', selectedBrand = 'all' }: ProductGridProps) {
-  const products: Product[] = [
-    {
-      id: '1',
-      name: 'Dangote Cement',
-      variant: '3X',
-      brand: 'dangote',
-      size: 50,
-      imageUrl: dangote3x,
-      price: 5000,
-      availableStock: 2
-    },
-    {
-      id: '2',
-      name: 'Dangote Cement',
-      variant: 'Supaset',
-      brand: 'dangote',
-      size: 50,
-      imageUrl: dangoteFalcon,
-      price: 5000,
-      availableStock: 100
-    },
-    {
-      id: '3',
-      name: 'BUA Cement',
-      variant: 'XL',
-      brand: 'bua',
-      size: 50,
-      imageUrl: bua,
-      price: 5000,
-      availableStock: 100
-    }
-  ]
+  const { currentShop } = useShop();
+  const { user } = useAuthStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Filter products based on search term and selected brand
+  useEffect(() => {
+    // If user is admin, they don't have a shop but can still view products
+    if (!currentShop && user?.role !== 'admin') {
+      setLoading(false);
+      return;
+    }
+
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+
+        // For admin users, use a fallback shop or show sample data
+        if (user?.role === 'admin' && !currentShop) {
+          // Fallback to sample data for admin users without a shop
+          setProducts([
+            {
+              id: '1',
+              name: 'Dangote Cement',
+              variant: '3X',
+              brand: 'dangote',
+              size: 50,
+              imageUrl: dangote3x,
+              price: 5000,
+              availableStock: 100
+            },
+            {
+              id: '2',
+              name: 'Dangote Cement',
+              variant: 'Falcon',
+              brand: 'dangote',
+              size: 50,
+              imageUrl: dangoteFalcon,
+              price: 5200,
+              availableStock: 150
+            },
+            {
+              id: '3',
+              name: 'BUA Cement',
+              variant: 'XL',
+              brand: 'bua',
+              size: 50,
+              imageUrl: bua,
+              price: 4800,
+              availableStock: 75
+            }
+          ]);
+          return;
+        }
+
+        if (!currentShop) {
+          throw new Error('No shop available');
+        }
+
+        const response = await apiClient.getProductsWithInventory(currentShop._id);
+
+        if (response.success) {
+          // Ensure response.products is an array of products before updating state
+          setProducts(Array.isArray(response.products) ? (response.products as Product[]) : []);
+        } else {
+          throw new Error(response.message || 'Failed to fetch products');
+        }
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch products');
+        // Fallback to sample data for development
+        setProducts([
+          {
+            id: '1',
+            name: 'Dangote Cement',
+            variant: '3X',
+            brand: 'dangote',
+            size: 50,
+            imageUrl: dangote3x,
+            price: 5000,
+            availableStock: 100
+          },
+          {
+            id: '2',
+            name: 'Dangote Cement',
+            variant: 'Falcon',
+            brand: 'dangote',
+            size: 50,
+            imageUrl: dangoteFalcon,
+            price: 5200,
+            availableStock: 150
+          },
+          {
+            id: '3',
+            name: 'BUA Cement',
+            variant: 'XL',
+            brand: 'bua',
+            size: 50,
+            imageUrl: bua,
+            price: 4800,
+            availableStock: 75
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [currentShop, user?.role]);  // Filter products based on search term and selected brand
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.variant.toLowerCase().includes(searchTerm.toLowerCase());
@@ -146,6 +226,59 @@ export function ProductGrid({ searchTerm = '', selectedBrand = 'all' }: ProductG
 
     return matchesSearch && matchesBrand;
   });
+
+  if (!currentShop && user?.role !== 'admin') {
+    return (
+      <div className="col-span-full text-center py-8">
+        <p className="text-muted-foreground mb-2">No shop assigned</p>
+        <p className="text-muted-foreground text-sm">Contact your administrator to assign a shop</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+                  <div>
+                    <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                    <div className="h-3 bg-gray-200 rounded w-16"></div>
+                  </div>
+                </div>
+                <div className="h-6 bg-gray-200 rounded w-16"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <div className="h-3 bg-gray-200 rounded w-12"></div>
+                  <div className="h-3 bg-gray-200 rounded w-16"></div>
+                </div>
+                <div className="flex justify-between">
+                  <div className="h-3 bg-gray-200 rounded w-16"></div>
+                  <div className="h-3 bg-gray-200 rounded w-12"></div>
+                </div>
+              </div>
+              <div className="h-8 bg-gray-200 rounded w-full mt-3"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="col-span-full text-center py-8">
+        <p className="text-red-500 mb-2">Error loading products</p>
+        <p className="text-muted-foreground text-sm">{error}</p>
+        <p className="text-muted-foreground text-sm mt-2">Using sample data for now</p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
