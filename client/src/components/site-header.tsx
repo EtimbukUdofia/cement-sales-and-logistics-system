@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { ShopInfo } from "./shop/ShopInfo";
+import { useAuthStore } from "@/store/authStore";
 import { Search, Bell } from "lucide-react"
 
 export function SiteHeader() {
+  const { user } = useAuthStore();
+
   return (
     <header className="flex h-12 sm:h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-1 px-4 sm:gap-2 lg:gap-2 lg:px-6">
@@ -13,6 +17,13 @@ export function SiteHeader() {
           className="mx-1 sm:mx-2 data-[orientation=vertical]:h-4"
         />
         <h1 className="text-sm sm:text-base font-medium truncate">Hey Adewumi</h1>
+
+        {/* Shop Info - Only show for sales personnel */}
+        {user?.role === 'salesPerson' && (
+          <div className="hidden md:block">
+            <ShopInfo />
+          </div>
+        )}
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
           <Button variant="ghost" size="icon" className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full w-8 h-8 sm:w-10 sm:h-10">
             <Search size={14} className="sm:w-4 sm:h-4" />
