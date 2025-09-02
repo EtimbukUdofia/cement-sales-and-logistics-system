@@ -32,8 +32,11 @@ export const signup = async (req: AuthRequest, res: Response): Promise<void> => 
       success: true,
       message: "User created successfully",
       user: {
-        ...newUser.toObject(),
-        password: undefined
+        id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+        role: newUser.role,
+        shopId: newUser.shopId
       }
     })
 
@@ -72,8 +75,11 @@ export const login = async (req: AuthRequest, res: Response): Promise<void> => {
       success: true,
       message: "Login successful",
       user: {
-        ...user.toObject(),
-        password: undefined
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        shopId: user.shopId
       }
     });
 
@@ -100,7 +106,16 @@ export const checkAuth = async (req: AuthRequest, res: Response): Promise<void> 
       return;
     }
 
-    res.status(200).json({ success: true, user });
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        shopId: user.shopId
+      }
+    });
   } catch (error) {
     console.error('Check auth error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error during authentication check' });

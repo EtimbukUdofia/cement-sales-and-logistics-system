@@ -34,8 +34,6 @@ export function LoginForm({
   const navigate = useNavigate();
 
   const onSubmit = async (data: FormData) => {
-    console.log("Form submitted:", data);
-    // Handle login logic here
     try {
       await login(
         data.email,
