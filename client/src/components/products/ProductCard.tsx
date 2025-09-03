@@ -1,35 +1,73 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Edit, Trash2 } from "lucide-react"
+import type { Product } from "@/store/productStore"
 
-interface ProductCardProps {
-  id: string
-  name: string
-  image: string
-  size: string
-  price: number
-  percentage?: number
-  variant?: string
-  backgroundColor?: string
+interface ProductCardProps extends Product {
+  onEdit?: (product: Product) => void;
+  onDelete?: (productId: string) => void;
 }
 
 export function ProductCard({
+  _id,
   name,
-  image,
+  variant,
+  brand,
+  imageUrl,
   size,
   price,
-  percentage = 10,
-  variant
+  isActive,
+  onEdit,
+  onDelete
 }: ProductCardProps) {
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit({
+        _id,
+        name,
+        variant,
+        brand,
+        imageUrl,
+        size,
+        price,
+        isActive,
+        description: '',
+        createdAt: '',
+        updatedAt: ''
+      });
+    }
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(_id);
+    }
+  };
+
+  // Fallback image if no imageUrl is provided
+  const displayImage = imageUrl || '/assets/products/cement-placeholder.jpg';
+  const displayVariant = variant || '';
+  const displaySize = `${size}kg`;
+
   return (
-    <Card className="relative overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl">
+    <Card className={`relative overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl ${!isActive ? 'opacity-60' : ''}`}>
       <CardContent className="p-0">
         {/* Product Image */}
         <div className="relative h-35 w-full mb-4 overflow-hidden rounded-t-2xl">
           <img
-            src={image}
-            alt={name}
+            src={displayImage}
+            alt={`${brand} ${name} ${variant || ''}`}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = '/assets/products/cement-placeholder.jpg';
+            }}
           />
+          {!isActive && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <span className="text-white font-semibold">Inactive</span>
+            </div>
+          )}
         </div>
 
         {/* Product Info */}
@@ -37,30 +75,36 @@ export function ProductCard({
           <div>
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-black text-xl mb-1">
-                {name}
+                {brand} {name}
               </h3>
 
-              {/* Percentage Badge */}
-              <div>
-                <Badge
-                  variant="secondary"
-                  className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-md"
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEdit}
+                  className="h-8 w-8 p-0"
                 >
-                  ↗ {percentage}%
-                </Badge>
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDelete}
+                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
             <p className="text-gray-500 text-sm">
-              {size}
+              {displaySize}
             </p>
-            {variant ? (
+            {displayVariant && (
               <p className="text-purple-600 font-medium text-lg mt-1 text-right">
-                {variant}
+                {displayVariant}
               </p>
-            ) : (
-              <span className="invisible block text-lg mt-1 text-right">
-                placeholder
-              </span>
             )}
           </div>
 
@@ -71,7 +115,7 @@ export function ProductCard({
             </div>
             <div className="bg-gray-100 px-4 py-2 rounded-lg flex-1">
               <span className="font-bold text-lg text-black">
-                {price.toLocaleString()}.00
+                ₦{price.toLocaleString()}.00
               </span>
             </div>
           </div>
