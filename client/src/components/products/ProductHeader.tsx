@@ -1,5 +1,5 @@
-import { Plus } from "lucide-react"
-import { Button } from "../ui/button"
+// import { Plus } from "lucide-react"
+// import { Button } from "../ui/button"
 
 interface ProductHeaderProps {
   title: string
@@ -14,13 +14,13 @@ export function ProductHeader({ title, subtitle }: ProductHeaderProps) {
         <p className="text-gray-600 text-sm mt-1">{subtitle}</p>
       </div>
 
-      <Button
+      {/* <Button
         variant="outline"
         size="icon"
         className="h-10 w-10 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-colors bg-green-500 px-6"
       >
         <Plus className="h-10 w-10 text-white" />
-      </Button>
+      </Button> */}
     </div>
   )
 }
