@@ -11,7 +11,7 @@ const createProductSchema = z.object({
   brand: z.string().min(1, 'Brand is required').transform((s) => s.trim()),
   size: z.preprocess((v) => Number(v), z.number().positive('Size must be a positive number')),
   price: z.preprocess((v) => Number(v), z.number().positive('Price must be a positive number')),
-  imageUrl: z.string().url('Invalid image URL').optional().transform((s) => s?.trim() || ''),
+  imageUrl: z.string().optional().transform((s) => s?.trim() || ''),
   description: z.string().optional().transform((s) => s?.trim() || ''),
   isActive: z.boolean().optional().default(true),
 });
