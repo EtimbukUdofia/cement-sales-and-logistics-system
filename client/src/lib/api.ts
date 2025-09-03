@@ -117,6 +117,11 @@ class ApiClient {
     return this.request(`/shops/${id}`, options);
   }
 
+  // Reports API methods
+  async getReports(params: URLSearchParams, options?: RequestInit) {
+    return this.request(`/reports?${params.toString()}`, options);
+  }
+
   // Customer API methods
   async getCustomers() {
     return this.request('/customers');
