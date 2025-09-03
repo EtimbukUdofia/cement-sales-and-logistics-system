@@ -22,6 +22,21 @@ interface Customer {
   address?: string;
 }
 
+interface InsufficientStockItem {
+  product: string;
+  available: number;
+  requested: number;
+}
+
+interface ErrorResponse {
+  response?: {
+    data?: {
+      insufficientStockItems?: InsufficientStockItem[];
+      message?: string;
+    };
+  };
+}
+
 export function useCheckout() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { items, clearCart } = useCartStore();
@@ -92,8 +107,6 @@ export function useCheckout() {
         notes: checkoutData.notes
       };
 
-      console.log(orderData);
-
       // Create the order
       const response = await apiClient.createSalesOrder(orderData);
 
@@ -110,6 +123,22 @@ export function useCheckout() {
       }
     } catch (error) {
       console.error('Checkout error:', error);
+
+      // Handle insufficient stock error specifically
+      if (error instanceof Error && error.message.includes('Insufficient stock')) {
+        // Check if the error response contains insufficient stock details
+        const errorResponse = (error as ErrorResponse).response?.data;
+        if (errorResponse?.insufficientStockItems) {
+          const stockDetails = errorResponse.insufficientStockItems
+            .map((item: InsufficientStockItem) => `Product ${item.product}: requested ${item.requested}, available ${item.available}`)
+            .join('; ');
+          toast.error(`Insufficient stock: ${stockDetails}`, { duration: 6000 });
+        } else {
+          toast.error('Some items have insufficient stock. Please check quantities.');
+        }
+        return { success: false, message: 'Insufficient stock', type: 'insufficient_stock' };
+      }
+
       const errorMessage = error instanceof Error ? error.message : 'Failed to process order';
       toast.error(`Order failed: ${errorMessage}`);
       return { success: false, message: errorMessage };
