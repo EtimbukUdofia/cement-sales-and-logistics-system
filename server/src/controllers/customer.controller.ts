@@ -10,8 +10,86 @@ const createCustomerSchema = z.object({
   email: z.string().email('Invalid email address').optional().transform((s) => s?.trim().toLowerCase() || undefined),
   phone: z.string().min(1, 'Phone is required').transform((s) => s.trim()),
   address: z.string().optional().transform((s) => s?.trim() || ''),
+  company: z.string().optional().transform((s) => s?.trim() || undefined),
+  customerType: z.enum(['individual', 'business', 'contractor']).optional().default('individual'),
+  preferredDeliveryAddress: z.string().optional().transform((s) => s?.trim() || undefined),
+  preferredPaymentMethod: z.enum(['cash', 'pos', 'transfer']).optional(),
   isActive: z.boolean().optional().default(true),
 });
+
+// Fast customer search for checkout suggestions
+export const searchCustomers = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { q, limit = 10 } = req.query;
+
+  if (!q || typeof q !== 'string' || q.trim().length < 2) {
+    res.status(400).json({ success: false, message: 'Search query must be at least 2 characters' });
+    return;
+  }
+
+  try {
+    const searchTerm = q.trim();
+    const searchLimit = Math.min(parseInt(String(limit)), 20); // Max 20 results
+
+    // Multi-field search with prioritization
+    const customers = await Customer.aggregate([
+      {
+        $match: {
+          isActive: true,
+          $or: [
+            { name: { $regex: searchTerm, $options: 'i' } },
+            { phone: { $regex: searchTerm.replace(/\D/g, ''), $options: 'i' } },
+            { email: { $regex: searchTerm, $options: 'i' } },
+            { company: { $regex: searchTerm, $options: 'i' } },
+            { searchKeywords: { $in: [new RegExp(searchTerm, 'i')] } }
+          ]
+        }
+      },
+      {
+        $addFields: {
+          // Prioritize recent customers and exact matches
+          score: {
+            $add: [
+              { $cond: [{ $eq: [{ $toLower: '$name' }, searchTerm.toLowerCase()] }, 100, 0] },
+              { $cond: [{ $eq: ['$phone', searchTerm] }, 100, 0] },
+              { $cond: [{ $regexMatch: { input: '$name', regex: `^${searchTerm}`, options: 'i' } }, 50, 0] },
+              { $cond: [{ $regexMatch: { input: '$phone', regex: `^${searchTerm}` } }, 50, 0] },
+              { $cond: [{ $ne: ['$lastOrderDate', null] }, 20, 0] },
+              { $cond: [{ $gte: ['$totalOrders', 1] }, 10, 0] }
+            ]
+          }
+        }
+      },
+      { $sort: { score: -1, lastOrderDate: -1, totalOrders: -1 } },
+      { $limit: searchLimit },
+      {
+        $project: {
+          name: 1,
+          phone: 1,
+          email: 1,
+          address: 1,
+          company: 1,
+          customerType: 1,
+          preferredDeliveryAddress: 1,
+          preferredPaymentMethod: 1,
+          totalOrders: 1,
+          totalSpent: 1,
+          lastOrderDate: 1,
+          score: 1
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      customers,
+      searchTerm,
+      count: customers.length
+    });
+  } catch (error) {
+    console.error('Search Customers Error:', (error as Error).message);
+    res.status(500).json({ success: false, message: 'Server error searching customers' });
+  }
+};
 
 // get all customers
 export const getAllCustomers = async (_req: AuthRequest, res: Response): Promise<void> => {
@@ -62,10 +140,16 @@ export const createCustomer = async (req: AuthRequest, res: Response): Promise<v
 
     const { email, phone } = parsed.data;
 
-    // check for existing customer by email or phone
-    const existingCustomer = await Customer.findOne({
-      $or: [{ email }, { phone }]
-    }).lean();
+    let existingCustomer;
+    if (email === undefined) {
+      existingCustomer = await Customer.findOne({ phone }).lean();
+    } else {
+      existingCustomer = await Customer.findOne({
+        $or: [{ email }, { phone }]
+      }).lean();
+    }
+
+    console.log('Existing customer check result:', existingCustomer);
 
     if (existingCustomer) {
       if (email && existingCustomer.email === email) {
@@ -210,5 +294,25 @@ export const getOrdersByCustomer = async (req: AuthRequest, res: Response): Prom
   } catch (error) {
     console.error('Get Orders By Customer Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching orders for customer' });
+  }
+};
+
+// Helper function to update customer statistics (to be called from sales order controller)
+export const updateCustomerStats = async (customerId: string, orderAmount: number, isNewOrder: boolean = true): Promise<void> => {
+  try {
+    const multiplier = isNewOrder ? 1 : -1;
+
+    await Customer.findByIdAndUpdate(
+      customerId,
+      {
+        $inc: {
+          totalOrders: multiplier,
+          totalSpent: orderAmount * multiplier
+        },
+        ...(isNewOrder && { lastOrderDate: new Date() })
+      }
+    );
+  } catch (error) {
+    console.error('Update Customer Stats Error:', (error as Error).message);
   }
 };

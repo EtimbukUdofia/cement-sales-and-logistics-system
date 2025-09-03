@@ -1,7 +1,10 @@
 import express from "express";
-import { createCustomer, deleteCustomer, getAllCustomers, getCustomerById, getOrdersByCustomer, updateCustomer } from "../controllers/customer.controller.ts";
+import { createCustomer, deleteCustomer, getAllCustomers, getCustomerById, getOrdersByCustomer, updateCustomer, searchCustomers } from "../controllers/customer.controller.ts";
 
 const router = express.Router();
+
+// Search customers (must come before /:id routes)
+router.get('/search', searchCustomers);
 
 router.get('/', getAllCustomers);
 router.get('/:id', getCustomerById);
