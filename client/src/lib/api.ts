@@ -32,6 +32,17 @@ interface CustomerData {
   address?: string;
 }
 
+interface CreateProductData {
+  name: string;
+  variant?: string;
+  brand: string;
+  size: number;
+  price: number;
+  imageUrl?: string;
+  description?: string;
+  isActive?: boolean;
+}
+
 class ApiClient {
   private baseURL: string;
 
@@ -92,6 +103,26 @@ class ApiClient {
     return this.request(`/products/${id}`, options);
   }
 
+  async createProduct(productData: CreateProductData) {
+    return this.request('/products', {
+      method: 'POST',
+      body: JSON.stringify(productData),
+    });
+  }
+
+  async updateProduct(id: string, productData: Partial<CreateProductData>) {
+    return this.request(`/products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(productData),
+    });
+  }
+
+  async deleteProduct(id: string) {
+    return this.request(`/products/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Sales Order API methods
   async createSalesOrder(orderData: SalesOrderData) {
     return this.request('/sales-orders', {
@@ -139,4 +170,4 @@ class ApiClient {
 export const apiClient = new ApiClient(API_BASE_URL);
 
 // Export types for use in components
-export type { ApiResponse, SalesOrderData, CustomerData };
+export type { ApiResponse, SalesOrderData, CustomerData, CreateProductData };
