@@ -2,6 +2,104 @@ import mongoose from "mongoose";
 import type { Response } from "express";
 import type { AuthRequest } from "../interfaces/interface.ts";
 import SalesOrder from "../models/SalesOrder.ts";
+import Inventory from "../models/Inventory.ts";
+import { updateCustomerStats } from "./customer.controller.ts";
+
+// Helper function to reduce inventory quantities
+const reduceInventoryQuantities = async (shopId: string, items: Array<{ product: string, quantity: number }>) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const inventoryUpdates = [];
+    const insufficientStockItems = [];
+
+    // Check stock availability and prepare updates
+    for (const item of items) {
+      const inventory = await Inventory.findOne({
+        product: item.product,
+        shop: shopId
+      }).session(session);
+
+      if (!inventory) {
+        throw new Error(`No inventory record found for product ${item.product} in shop ${shopId}`);
+      }
+
+      if (inventory.quantity < item.quantity) {
+        insufficientStockItems.push({
+          product: item.product,
+          available: inventory.quantity,
+          requested: item.quantity
+        });
+        continue;
+      }
+
+      inventoryUpdates.push({
+        inventoryId: inventory._id,
+        newQuantity: inventory.quantity - item.quantity
+      });
+    }
+
+    // If any items have insufficient stock, abort the transaction
+    if (insufficientStockItems.length > 0) {
+      await session.abortTransaction();
+      return {
+        success: false,
+        error: 'Insufficient stock',
+        details: insufficientStockItems
+      };
+    }
+
+    // Update all inventory quantities
+    for (const update of inventoryUpdates) {
+      await Inventory.findByIdAndUpdate(
+        update.inventoryId,
+        { quantity: update.newQuantity },
+        { session }
+      );
+    }
+
+    await session.commitTransaction();
+    return { success: true };
+
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
+// Helper function to restore inventory quantities when order is cancelled
+const restoreInventoryQuantities = async (shopId: string, items: Array<{ product: string, quantity: number }>) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // Restore inventory quantities
+    for (const item of items) {
+      await Inventory.findOneAndUpdate(
+        {
+          product: item.product,
+          shop: shopId
+        },
+        {
+          $inc: { quantity: item.quantity }
+        },
+        { session, upsert: false }
+      );
+    }
+
+    await session.commitTransaction();
+    return { success: true };
+
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
 
 //  get all sales orders
 export const getAllSalesOrders = async (_req: AuthRequest, res: Response): Promise<void> => {
@@ -110,9 +208,36 @@ export const createSalesOrder = async (req: AuthRequest, res: Response): Promise
   // If client provided totalAmount, prefer computed total to avoid tampering
   const finalTotal = Number(computedTotal.toFixed(2));
 
+  // i can check for tmpering and log by comparing cmoputed total and totalAmount from the client and then log the suspicious activity
+
   try {
-    const newSalesOrder = new SalesOrder({...req.body, status: 'Pending', totalAmount: finalTotal, salesPerson: req.userId });
+    // Check and reduce inventory before creating the sales order
+    const inventoryResult = await reduceInventoryQuantities(shop, items);
+
+    if (!inventoryResult.success) {
+      if (inventoryResult.error === 'Insufficient stock') {
+        res.status(400).json({
+          success: false,
+          message: 'Insufficient stock for some items',
+          insufficientStockItems: inventoryResult.details
+        });
+        return;
+      } else {
+        throw new Error(inventoryResult.error || 'Failed to update inventory');
+      }
+    }
+
+    // Create the sales order after successful inventory reduction
+    const newSalesOrder = new SalesOrder({ ...req.body, status: 'Pending', totalAmount: finalTotal, salesPerson: req.userId });
     const result = await newSalesOrder.save();
+
+    // Update customer statistics
+    try {
+      await updateCustomerStats(customer, finalTotal, true);
+    } catch (statsError) {
+      console.error('Error updating customer stats:', statsError);
+      // Don't fail the order creation if stats update fails
+    }
 
     // populate before returning
     const populated = await SalesOrder.findById(result._id)
@@ -121,7 +246,7 @@ export const createSalesOrder = async (req: AuthRequest, res: Response): Promise
       .populate('items.product')
       .lean();
 
-    res.status(201).json({ success: true, message: 'Sales order created successfully', salesOrder: populated });
+    res.status(201).json({ success: true, message: 'Sales order created successfully and inventory updated', salesOrder: populated });
   } catch (error) {
     console.error('Create Sales Order Error:', (error as Error).message);
     const errAny = error as any;
@@ -155,6 +280,34 @@ export const updateSalesOrderStatus = async (req: AuthRequest, res: Response): P
   }
 
   try {
+    // Get the current sales order to check status changes
+    const currentOrder = await SalesOrder.findById(id).lean();
+    if (!currentOrder) {
+      res.status(404).json({ success: false, message: 'Sales order not found' });
+      return;
+    }
+
+    // Check if order is being cancelled and was previously not cancelled
+    const isCancelling = status === 'Cancelled' && currentOrder.status !== 'Cancelled';
+
+    // If cancelling the order, restore inventory
+    if (isCancelling) {
+      try {
+        const itemsForInventory = Array.from(currentOrder.items).map(item => ({
+          product: item.product.toString(),
+          quantity: item.quantity
+        }));
+        await restoreInventoryQuantities(currentOrder.shop.toString(), itemsForInventory);
+      } catch (inventoryError) {
+        console.error('Error restoring inventory:', inventoryError);
+        res.status(500).json({
+          success: false,
+          message: 'Failed to restore inventory when cancelling order'
+        });
+        return;
+      }
+    }
+
     const update: any = { status };
     // set deliveredDate when status is Delivered, otherwise clear it
     update.deliveredDate = status === 'Delivered' ? new Date() : null;
@@ -170,7 +323,11 @@ export const updateSalesOrderStatus = async (req: AuthRequest, res: Response): P
       return;
     }
 
-    res.status(200).json({ success: true, message: 'Sales order status updated successfully', salesOrder: updated });
+    const message = isCancelling
+      ? 'Sales order cancelled and inventory restored successfully'
+      : 'Sales order status updated successfully';
+
+    res.status(200).json({ success: true, message, salesOrder: updated });
   } catch (error) {
     console.error('Update Sales Order Status Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error updating sales order status' });
@@ -192,13 +349,40 @@ export const deleteSalesOrder = async (req: AuthRequest, res: Response): Promise
   }
 
   try {
-    const deletedSalesOrder = await SalesOrder.findByIdAndDelete(id).lean();
+    // Get the sales order before deleting to restore inventory if needed
+    const salesOrder = await SalesOrder.findById(id).lean();
 
-    if (!deletedSalesOrder) {
+    if (!salesOrder) {
       res.status(404).json({ success: false, message: 'Sales order not found' });
       return;
     }
-    res.status(200).json({ success: true, message: 'Sales order deleted successfully', salesOrder: deletedSalesOrder });
+
+    // Restore inventory if the order wasn't already cancelled
+    if (salesOrder.status !== 'Cancelled') {
+      try {
+        const itemsForInventory = Array.from(salesOrder.items).map(item => ({
+          product: item.product.toString(),
+          quantity: item.quantity
+        }));
+        await restoreInventoryQuantities(salesOrder.shop.toString(), itemsForInventory);
+      } catch (inventoryError) {
+        console.error('Error restoring inventory:', inventoryError);
+        res.status(500).json({
+          success: false,
+          message: 'Failed to restore inventory when deleting order'
+        });
+        return;
+      }
+    }
+
+    // Delete the sales order
+    await SalesOrder.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Sales order deleted successfully and inventory restored',
+      salesOrder: salesOrder
+    });
   } catch (error) {
     console.error('Delete Sales Order Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error deleting sales order' });
@@ -225,7 +409,7 @@ export const getSalesOrdersByCustomer = async (req: AuthRequest, res: Response):
       .populate('shop')
       .populate('items.product')
       .lean();
-    
+
     res.status(200).json({ success: true, salesOrders });
   } catch (error) {
     console.error('Get Sales Orders By Customer Error:', (error as Error).message);
@@ -253,7 +437,7 @@ export const getSalesOrdersByShop = async (req: AuthRequest, res: Response): Pro
       .populate('shop')
       .populate('items.product')
       .lean();
-    
+
     res.status(200).json({ success: true, salesOrders });
   } catch (error) {
     console.error('Get Sales Orders By Shop Error:', (error as Error).message);
