@@ -1,5 +1,5 @@
 import type { NextFunction, Response } from "express";
-import type { AuthRequest, DecodedToken } from "../interfaces/interface.ts";
+import type { AuthRequest, DecodedToken } from "../interfaces/interface.js";
 import jwt from "jsonwebtoken";
 
 export const verifyToken = async (req: AuthRequest, res: Response, next: NextFunction) => {

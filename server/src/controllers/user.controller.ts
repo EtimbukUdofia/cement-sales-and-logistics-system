@@ -1,7 +1,7 @@
 import type { Response } from 'express';
 import mongoose from "mongoose";
-import type { AuthRequest } from '../interfaces/interface.ts';
-import User from '../models/User.ts';
+import type { AuthRequest } from '../interfaces/interface.js';
+import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 
 // Add a new User. This is for the admin to add a new sales person or admin

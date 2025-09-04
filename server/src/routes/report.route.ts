@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   getSalesHistory
-} from '../controllers/report.controller.ts';
+} from '../controllers/report.controller.js';
 
 const router = Router();
 

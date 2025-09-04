@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 import type { Response } from "express";
-import type { AuthRequest } from "../interfaces/interface.ts";
-import Customer from "../models/Customer.ts";
+import type { AuthRequest } from "../interfaces/interface.js";
+import Customer from "../models/Customer.js";
 import { z } from "zod";
-import SalesOrder from "../models/SalesOrder.ts";
+import SalesOrder from "../models/SalesOrder.js";
 
 const createCustomerSchema = z.object({
   name: z.string().min(1, 'Name is required').transform((s) => s.trim()),

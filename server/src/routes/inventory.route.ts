@@ -9,8 +9,8 @@ import {
   getLowStockProducts,
   restockInventory,
   updateInventoryStock
-} from "../controllers/inventory.controller.ts";
-import isAdmin from "../middlewares/isAdmin.ts";
+} from "../controllers/inventory.controller.js";
+import isAdmin from "../middlewares/isAdmin.js";
 
 const router = express.Router();
 

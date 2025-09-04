@@ -1,6 +1,6 @@
 import express from 'express';
-import isAdmin from '../middlewares/isAdmin.ts';
-import { createShop, deleteShop, getAllShops, getShopById, updateShop } from '../controllers/shop.controller.ts';
+import isAdmin from '../middlewares/isAdmin.js';
+import { createShop, deleteShop, getAllShops, getShopById, updateShop } from '../controllers/shop.controller.js';
 
 const router = express.Router();
 

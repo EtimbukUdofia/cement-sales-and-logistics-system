@@ -1,9 +1,9 @@
 import type { Response } from 'express';
 import mongoose from 'mongoose';
-import type { AuthRequest } from '../interfaces/interface.ts';
-import Inventory from '../models/Inventory.ts';
-import Product from '../models/Product.ts';
-import Shop from '../models/Shop.ts';
+import type { AuthRequest } from '../interfaces/interface.js';
+import Inventory from '../models/Inventory.js';
+import Product from '../models/Product.js';
+import Shop from '../models/Shop.js';
 
 // get inventory summary for all shops
 export const getInventorySummary = async (_req: AuthRequest, res: Response): Promise<void> => {

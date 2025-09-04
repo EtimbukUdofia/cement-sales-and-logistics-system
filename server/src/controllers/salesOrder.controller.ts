@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 import type { Response } from "express";
-import type { AuthRequest } from "../interfaces/interface.ts";
-import SalesOrder from "../models/SalesOrder.ts";
-import Inventory from "../models/Inventory.ts";
-import { updateCustomerStats } from "./customer.controller.ts";
+import type { AuthRequest } from "../interfaces/interface.js";
+import SalesOrder from "../models/SalesOrder.js";
+import Inventory from "../models/Inventory.js";
+import { updateCustomerStats } from "./customer.controller.js";
 
 // Helper function to reduce inventory quantities
 const reduceInventoryQuantities = async (shopId: string, items: Array<{ product: string, quantity: number }>) => {

@@ -1,6 +1,6 @@
 import express from 'express';
-import { createSalesOrder, deleteSalesOrder, getAllSalesOrders, getSalesOrderById, getSalesOrdersByCustomer, getSalesOrdersByShop, updateSalesOrderStatus } from '../controllers/salesOrder.controller.ts';
-import isAdmin from '../middlewares/isAdmin.ts';
+import { createSalesOrder, deleteSalesOrder, getAllSalesOrders, getSalesOrderById, getSalesOrdersByCustomer, getSalesOrdersByShop, updateSalesOrderStatus } from '../controllers/salesOrder.controller.js';
+import isAdmin from '../middlewares/isAdmin.js';
 
 const router = express.Router();
 

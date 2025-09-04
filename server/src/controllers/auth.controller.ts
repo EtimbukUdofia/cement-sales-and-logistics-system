@@ -1,8 +1,8 @@
 import { type Response } from "express";
 import bcrypt from "bcryptjs";
-import User from "../models/User.ts";
-import generateTokenAndSetCookie from "../utils/generateTokenAndSetCookie.ts";
-import type { AuthRequest } from "../interfaces/interface.ts";
+import User from "../models/User.js";
+import generateTokenAndSetCookie from "../utils/generateTokenAndSetCookie.js";
+import type { AuthRequest } from "../interfaces/interface.js";
 
 export const signup = async (req: AuthRequest, res: Response): Promise<void> => {
   const { username, email, password } = req.body;

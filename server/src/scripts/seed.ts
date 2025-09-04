@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
-import Product from '../models/Product.ts';
-import Shop from '../models/Shop.ts';
-import Inventory from '../models/Inventory.ts';
-import User from '../models/User.ts';
-import Customer from '../models/Customer.ts';
-import SalesOrder from '../models/SalesOrder.ts';
+import Product from '../models/Product.js';
+import Shop from '../models/Shop.js';
+import Inventory from '../models/Inventory.js';
+import User from '../models/User.js';
+import Customer from '../models/Customer.js';
+import SalesOrder from '../models/SalesOrder.js';
 
 dotenv.config();
 

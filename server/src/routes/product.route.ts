@@ -1,6 +1,6 @@
 import express from 'express';
-import { createProduct, deleteProduct, getDistinctBrands, getProductById, getProducts, getProductsWithInventory, getProductsByBrand, updateProduct } from '../controllers/product.controller.ts';
-import isAdmin from '../middlewares/isAdmin.ts';
+import { createProduct, deleteProduct, getDistinctBrands, getProductById, getProducts, getProductsWithInventory, getProductsByBrand, updateProduct } from '../controllers/product.controller.js';
+import isAdmin from '../middlewares/isAdmin.js';
 
 const router = express.Router();
 

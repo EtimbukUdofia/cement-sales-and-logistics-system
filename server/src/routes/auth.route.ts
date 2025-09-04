@@ -1,7 +1,7 @@
 import express from "express";
-import { checkAuth, login, logout, signup } from "../controllers/auth.controller.ts";
-import { verifyToken } from "../middlewares/verifyToken.ts";
-// import alreadyLoggedIn from "../middlewares/alreadyLoggedIn.ts";
+import { checkAuth, login, logout, signup } from "../controllers/auth.controller.js";
+import { verifyToken } from "../middlewares/verifyToken.js";
+// import alreadyLoggedIn from "../middlewares/alreadyLoggedIn.js";
 
 const router = express.Router();
 

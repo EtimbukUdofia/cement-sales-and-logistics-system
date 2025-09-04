@@ -1,6 +1,6 @@
 import express from "express";
-import isAdmin from "../middlewares/isAdmin.ts";
-import { addUser, deleteUser, getAllSalesPersons, getAllUsers, getUserById, updateUser } from "../controllers/user.controller.ts";
+import isAdmin from "../middlewares/isAdmin.js";
+import { addUser, deleteUser, getAllSalesPersons, getAllUsers, getUserById, updateUser } from "../controllers/user.controller.js";
 
 const router = express.Router();
 

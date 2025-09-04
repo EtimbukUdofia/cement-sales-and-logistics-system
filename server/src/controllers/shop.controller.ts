@@ -1,8 +1,8 @@
 import type { Response } from 'express';
 import mongoose from 'mongoose';
-import type { AuthRequest } from '../interfaces/interface.ts';
-import Shop from '../models/Shop.ts';
-import User from '../models/User.ts';
+import type { AuthRequest } from '../interfaces/interface.js';
+import Shop from '../models/Shop.js';
+import User from '../models/User.js';
 
 // get all shops
 export const getAllShops = async (_req: AuthRequest, res: Response): Promise<void> => {

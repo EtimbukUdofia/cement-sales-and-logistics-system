@@ -1,5 +1,5 @@
 import type { Response, NextFunction } from 'express';
-import type { AuthRequest } from '../interfaces/interface.ts';
+import type { AuthRequest } from '../interfaces/interface.js';
 
 const isAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
   if (req.role === 'admin') {

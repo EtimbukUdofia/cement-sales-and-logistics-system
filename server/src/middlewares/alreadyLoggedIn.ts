@@ -1,5 +1,5 @@
 import type { NextFunction, Response } from "express";
-import type { AuthRequest } from "../interfaces/interface.ts";
+import type { AuthRequest } from "../interfaces/interface.js";
 import jwt from "jsonwebtoken";
 
 const alreadyLoggedIn = (req: AuthRequest, res: Response, next: NextFunction) => {

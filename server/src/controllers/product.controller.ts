@@ -1,9 +1,9 @@
 import type { Response } from 'express';
 import mongoose from "mongoose";
-import type { AuthRequest } from '../interfaces/interface.ts';
-import Product from '../models/Product.ts';
+import type { AuthRequest } from '../interfaces/interface.js';
+import Product from '../models/Product.js';
 import { z } from 'zod';
-import { escapeRegExp } from '../utils.ts';
+import { escapeRegExp } from '../utils.js';
 
 const createProductSchema = z.object({
   name: z.string().min(1, 'Name is required').transform((s) => s.trim()),

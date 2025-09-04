@@ -1,7 +1,7 @@
 import type { Response } from 'express';
-import SalesOrder from '../models/SalesOrder.ts';
-import Customer from '../models/Customer.ts';
-import type { AuthRequest } from '../interfaces/interface.ts';
+import SalesOrder from '../models/SalesOrder.js';
+import Customer from '../models/Customer.js';
+import type { AuthRequest } from '../interfaces/interface.js';
 
 export const getSalesHistory = async (req: AuthRequest, res: Response) => {
   try {
