@@ -4,7 +4,6 @@ import { suppliers, recentPurchaseOrders } from "@/data/suppliers";
 const SuppliersPage = () => {
   const handleNewPurchaseOrder = () => {
     // TODO: Navigate to purchase order creation page or open modal
-    console.log("Create new purchase order");
   };
 
   return (

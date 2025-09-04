@@ -30,8 +30,8 @@ export function useUserManagement() {
                     }
                   } as UserData;
                 }
-              } catch (error) {
-                console.error('Error fetching shop:', error);
+              } catch {
+                // Error fetching shop details, skip
               }
             }
             return user;
@@ -41,8 +41,7 @@ export function useUserManagement() {
       } else {
         toast.error('Failed to fetch users');
       }
-    } catch (error) {
-      console.error('Error fetching users:', error);
+    } catch {
       toast.error('Failed to fetch users');
     } finally {
       setIsLoading(false);
@@ -56,8 +55,8 @@ export function useUserManagement() {
       if (response.success && response.shops) {
         setShops(response.shops);
       }
-    } catch (error) {
-      console.error('Error fetching shops:', error);
+    } catch {
+      // Error fetching shops, continue silently
     }
   };
 
@@ -75,7 +74,6 @@ export function useUserManagement() {
         return { success: false, message: response.message };
       }
     } catch (error) {
-      console.error('Error creating user:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create user';
       toast.error(errorMessage);
       return { success: false, message: errorMessage };
@@ -98,7 +96,6 @@ export function useUserManagement() {
         return { success: false, message: response.message };
       }
     } catch (error) {
-      console.error('Error updating user:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update user';
       toast.error(errorMessage);
       return { success: false, message: errorMessage };
@@ -121,7 +118,6 @@ export function useUserManagement() {
         return { success: false, message: response.message };
       }
     } catch (error) {
-      console.error('Error deleting user:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete user';
       toast.error(errorMessage);
       return { success: false, message: errorMessage };

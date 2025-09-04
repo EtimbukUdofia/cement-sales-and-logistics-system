@@ -136,11 +136,9 @@ export default function SalesHistoryPage() {
           toast.success(`Found ${(response.data as SalesHistoryData).pagination.totalRecords} results for "${searchTerm.trim()}"`)
         }
       } else {
-        console.error('Failed to fetch sales history:', response.message)
         toast.error('Failed to load sales history')
       }
-    } catch (error) {
-      console.error('Error fetching sales history:', error)
+    } catch {
       toast.error('Failed to load sales history')
     } finally {
       setIsLoading(false)

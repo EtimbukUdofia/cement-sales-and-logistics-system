@@ -195,7 +195,6 @@ export function ProductGrid({ searchTerm = '', selectedBrand = 'all', refreshTri
           return;
         }
 
-        console.error('Error fetching products:', err);
         if (isMounted) {
           setError(err instanceof Error ? err.message : 'Failed to fetch products');
           // Fallback to sample data for development

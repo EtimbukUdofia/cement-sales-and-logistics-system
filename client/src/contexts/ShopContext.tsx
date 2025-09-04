@@ -1,6 +1,6 @@
 import { createContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { apiClient } from '@/lib/api';
+import { apiClient, type ShopData } from '@/lib/api';
 
 interface Shop {
   _id: string;
@@ -15,7 +15,7 @@ interface Shop {
 }
 
 interface ShopContextType {
-  currentShop: Shop | null;
+  currentShop: Shop | ShopData | null;
   loading: boolean;
   error: string | null;
   refreshShops: (abortSignal?: AbortSignal) => Promise<void>;
@@ -29,7 +29,7 @@ interface ShopProviderProps {
 
 function ShopProvider({ children }: ShopProviderProps) {
   const { user } = useAuthStore();
-  const [currentShop, setCurrentShop] = useState<Shop | null>(null);
+  const [currentShop, setCurrentShop] = useState<Shop | ShopData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,16 +54,15 @@ function ShopProvider({ children }: ShopProviderProps) {
       }
 
       if (response.success && response.shop) {
-        setCurrentShop(response.shop as Shop);
+        setCurrentShop(response.shop as ShopData);
       } else {
-        throw new Error(response.message || 'Failed to fetch assigned shop');
+        throw new Error('Failed to fetch assigned shop');
       }
     } catch (err) {
       if (abortSignal?.aborted) {
         return;
       }
 
-      console.error('Error fetching shop:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch shop');
       setCurrentShop(null);
     } finally {

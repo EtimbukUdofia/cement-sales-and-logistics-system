@@ -14,7 +14,7 @@ import {
   ShopComparison,
   ExportReports
 } from "@/components/reports"
-import { apiClient } from "@/lib/api"
+import { apiClient, type ShopData } from "@/lib/api"
 import { toast } from "sonner"
 import {
   BarChart3,
@@ -142,8 +142,7 @@ export default function ReportsPage() {
       if (response.success) {
         setReportData(response.data as ReportData)
       }
-    } catch (error) {
-      console.error('Error fetching reports:', error)
+    } catch {
       toast.error('Failed to load reports')
       // Set mock data for development
       setReportData({
@@ -219,10 +218,20 @@ export default function ReportsPage() {
     try {
       const response = await apiClient.getShops()
       if (response.success) {
-        setShops((response.data as { shops: Shop[] })?.shops || [])
+        // Normalize API shop shape to local Shop type (ensure manager is a string)
+        const normalizedShops = (response?.shops || []).map((s: ShopData) => ({
+          _id: s._id,
+          name: s.name,
+          location: s.location,
+          // manager can be a string or an object from the API; prefer username, then email, then fallback to empty string
+          manager:
+            typeof s.manager === "string"
+              ? s.manager
+              : s.manager?.username ?? s.manager?.email ?? ""
+        }))
+        setShops(normalizedShops)
       }
-    } catch (error) {
-      console.error('Error fetching shops:', error)
+    } catch {
       toast.error('Failed to load shops')
       // Set mock shops for development
       setShops([

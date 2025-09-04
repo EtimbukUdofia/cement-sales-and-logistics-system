@@ -122,8 +122,6 @@ export function useCheckout() {
         throw new Error(response.message || 'Failed to create order');
       }
     } catch (error) {
-      console.error('Checkout error:', error);
-
       // Handle insufficient stock error specifically
       if (error instanceof Error && error.message.includes('Insufficient stock')) {
         // Check if the error response contains insufficient stock details

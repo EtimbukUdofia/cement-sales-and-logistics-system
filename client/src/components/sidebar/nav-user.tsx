@@ -33,7 +33,6 @@ export function NavUser() {
   const { logout, user } = useAuthStore();
 
   const handleLogout = async () => {
-    console.log("clicked")
     logout();
   }
 
@@ -48,7 +47,7 @@ export function NavUser() {
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
                 <AvatarImage src={""} alt={user?.username} />
-                <AvatarFallback className="rounded-lg text-black">{ user?.username.charAt(0).toUpperCase() }</AvatarFallback>
+                <AvatarFallback className="rounded-lg text-black">{user?.username.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user?.username}</span>

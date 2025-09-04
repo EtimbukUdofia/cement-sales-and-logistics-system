@@ -31,13 +31,12 @@ export function useInventory() {
         setStats(statsResponse.data);
       }
     } catch (err) {
-      console.error('Error fetching inventory:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch inventory');
     } finally {
       setIsLoading(false);
     }
   }, [user]);
-  
+
   const filterInventory = useCallback((searchQuery: string) => {
     if (!searchQuery.trim()) return inventory;
 
