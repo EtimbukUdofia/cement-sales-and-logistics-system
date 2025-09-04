@@ -25,8 +25,12 @@ export const signup = async (req: AuthRequest, res: Response): Promise<void> => 
     const newUser = new User({ username, email, password: hashedPassword });
     const result = await newUser.save();
 
-    // generate jwt
-    generateTokenAndSetCookie(res, { userId: newUser._id, role: newUser.role });
+    // generate jwt with shopId included
+    generateTokenAndSetCookie(res, {
+      userId: newUser._id,
+      role: newUser.role,
+      ...(newUser.shopId && { shopId: newUser.shopId })
+    });
 
     res.status(201).json({
       success: true,
@@ -68,8 +72,12 @@ export const login = async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
 
-    // generate jwt
-    generateTokenAndSetCookie(res, { userId: user._id, role: user.role });
+    // generate jwt with shopId included
+    generateTokenAndSetCookie(res, {
+      userId: user._id,
+      role: user.role,
+      ...(user.shopId && { shopId: user.shopId })
+    });
 
     res.status(200).json({
       success: true,
