@@ -2,7 +2,7 @@ import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
-import rateLimit from 'express-rate-limit';
+// import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
@@ -26,6 +26,10 @@ const PORT = process.env.PORT || 5000;
 
 // Production security and performance middleware
 if (process.env.NODE_ENV === 'production') {
+
+  // Render proxy configuration
+  // app.set('trust proxy', 3);
+
   // Security headers
   app.use(helmet({
     contentSecurityPolicy: {
@@ -45,22 +49,22 @@ if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'));
 
   // Rate limiting
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again later.',
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-  app.use('/api', limiter);
+  // const limiter = rateLimit({
+  //   windowMs: 15 * 60 * 1000, // 15 minutes
+  //   max: 100, // Limit each IP to 100 requests per windowMs
+  //   message: 'Too many requests from this IP, please try again later.',
+  //   standardHeaders: true,
+  //   legacyHeaders: false,
+  // });
+  // app.use('/api', limiter);
 
   // Stricter rate limiting for auth endpoints
-  const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // Limit each IP to 10 auth requests per windowMs
-    message: 'Too many authentication attempts, please try again later.',
-  });
-  app.use('/api/v0/auth', authLimiter);
+  // const authLimiter = rateLimit({
+  //   windowMs: 15 * 60 * 1000, // 15 minutes
+  //   max: 10, // Limit each IP to 10 auth requests per windowMs
+  //   message: 'Too many authentication attempts, please try again later.',
+  // });
+  // app.use('/api/v0/auth', authLimiter);
 } else {
   // Development logging
   app.use(morgan('dev'));
