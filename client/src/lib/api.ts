@@ -43,6 +43,38 @@ interface CreateProductData {
   isActive?: boolean;
 }
 
+interface InventoryData {
+  _id: string;
+  product: {
+    _id: string;
+    name: string;
+    variant?: string;
+    brand: string;
+    size: number;
+    price: number;
+    imageUrl?: string;
+  };
+  shop: {
+    _id: string;
+    name: string;
+    location: string;
+  };
+  quantity: number;
+  minStockLevel: number;
+  maxStockLevel: number;
+  lastRestocked?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface InventoryStatsData {
+  totalProducts: number;
+  lowStockItems: number;
+  outOfStockItems: number;
+  totalValue: number;
+  totalQuantity: number;
+}
+
 class ApiClient {
   private baseURL: string;
 
@@ -164,10 +196,31 @@ class ApiClient {
       body: JSON.stringify(customerData),
     });
   }
+
+  // Inventory API methods
+  async getInventory(options?: RequestInit) {
+    return this.request<InventoryData[]>('/inventory', options);
+  }
+
+  async getInventoryStats(shopId?: string, options?: RequestInit) {
+    const endpoint = shopId ? `/inventory/stats?shop=${shopId}` : '/inventory/stats';
+    return this.request<InventoryStatsData>(endpoint, options);
+  }
+
+  async getShopInventory(shopId: string, options?: RequestInit) {
+    return this.request<InventoryData[]>(`/inventory/shop/${shopId}`, options);
+  }
+
+  async updateInventoryStock(inventoryId: string, quantity: number) {
+    return this.request(`/inventory/${inventoryId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ quantity }),
+    });
+  }
 }
 
 // Export a default instance
 export const apiClient = new ApiClient(API_BASE_URL);
 
 // Export types for use in components
-export type { ApiResponse, SalesOrderData, CustomerData, CreateProductData };
+export type { ApiResponse, SalesOrderData, CustomerData, CreateProductData, InventoryData, InventoryStatsData };
