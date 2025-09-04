@@ -32,6 +32,51 @@ interface CustomerData {
   address?: string;
 }
 
+interface UserData {
+  _id: string;
+  username: string;
+  email: string;
+  role: 'admin' | 'salesPerson';
+  shopId?: string;
+  createdAt: string;
+  updatedAt: string;
+  shop?: {
+    _id: string;
+    name: string;
+    address: string;
+  };
+}
+
+interface CreateUserData {
+  username: string;
+  email: string;
+  password: string;
+  role: 'admin' | 'salesPerson';
+  shopId?: string;
+}
+
+interface UpdateUserData {
+  username?: string;
+  email?: string;
+  password?: string;
+  role?: 'admin' | 'salesPerson';
+  shopId?: string;
+}
+
+interface ShopData {
+  _id: string;
+  name: string;
+  location: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  manager?: {
+    _id: string;
+    username: string;
+    email: string;
+  };
+}
+
 interface CreateProductData {
   name: string;
   variant?: string;
@@ -172,12 +217,12 @@ class ApiClient {
   }
 
   // Shop API methods
-  async getShops(options?: RequestInit) {
-    return this.request('/shops', options);
+  async getShops(options?: RequestInit): Promise<{ success: boolean; shops: ShopData[] }> {
+    return this.request('/shops', options) as Promise<{ success: boolean; shops: ShopData[] }>;
   }
 
-  async getShopById(id: string, options?: RequestInit) {
-    return this.request(`/shops/${id}`, options);
+  async getShopById(id: string, options?: RequestInit): Promise<{ success: boolean; shop: ShopData }> {
+    return this.request(`/shops/${id}`, options) as Promise<{ success: boolean; shop: ShopData }>;
   }
 
   // Reports API methods
@@ -200,6 +245,35 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(customerData),
     });
+  }
+
+  // User API methods
+  async getUsers(): Promise<{ success: boolean; users: UserData[] }> {
+    return this.request('/users') as Promise<{ success: boolean; users: UserData[] }>;
+  }
+
+  async getUserById(id: string): Promise<{ success: boolean; user: UserData }> {
+    return this.request(`/users/${id}`) as Promise<{ success: boolean; user: UserData }>;
+  }
+
+  async createUser(userData: CreateUserData): Promise<{ success: boolean; message: string; user: UserData }> {
+    return this.request('/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    }) as Promise<{ success: boolean; message: string; user: UserData }>;
+  }
+
+  async updateUser(id: string, userData: UpdateUserData): Promise<{ success: boolean; message: string; user: UserData }> {
+    return this.request(`/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    }) as Promise<{ success: boolean; message: string; user: UserData }>;
+  }
+
+  async deleteUser(id: string): Promise<{ success: boolean; message: string }> {
+    return this.request(`/users/${id}`, {
+      method: 'DELETE',
+    }) as Promise<{ success: boolean; message: string }>;
   }
 
   // Inventory API methods
@@ -228,4 +302,4 @@ class ApiClient {
 export const apiClient = new ApiClient(API_BASE_URL);
 
 // Export types for use in components
-export type { ApiResponse, SalesOrderData, CustomerData, CreateProductData, InventoryData, InventoryStatsData };
+export type { ApiResponse, SalesOrderData, CustomerData, CreateProductData, InventoryData, InventoryStatsData, UserData, CreateUserData, UpdateUserData, ShopData };
