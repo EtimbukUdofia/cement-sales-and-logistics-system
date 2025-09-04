@@ -6,6 +6,7 @@ import type { StringValue } from "ms";
 interface Payload {
   userId: Types.ObjectId;
   role: 'admin' | 'salesPerson';
+  shopId?: Types.ObjectId;
 }
 
 const generateTokenAndSetCookie = (res: Response, payload: Payload): void => {
