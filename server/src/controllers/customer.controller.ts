@@ -7,7 +7,7 @@ import SalesOrder from "../models/SalesOrder.ts";
 
 const createCustomerSchema = z.object({
   name: z.string().min(1, 'Name is required').transform((s) => s.trim()),
-  email: z.string().email('Invalid email address').optional().transform((s) => s?.trim().toLowerCase() || undefined),
+  email: z.email('Invalid email address').optional().transform((s) => s?.trim().toLowerCase() || undefined),
   phone: z.string().min(1, 'Phone is required').transform((s) => s.trim()),
   address: z.string().optional().transform((s) => s?.trim() || ''),
   company: z.string().optional().transform((s) => s?.trim() || undefined),
@@ -138,31 +138,29 @@ export const createCustomer = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
-    const { email, phone } = parsed.data;
+    // const { email, phone } = parsed.data;
 
-    let existingCustomer;
-    if (email === undefined) {
-      existingCustomer = await Customer.findOne({ phone }).lean();
-    } else {
-      existingCustomer = await Customer.findOne({
-        $or: [{ email }, { phone }]
-      }).lean();
-    }
+    // let existingCustomer;
+    // if (email === undefined) {
+    //   existingCustomer = await Customer.findOne({ phone }).lean();
+    // } else {
+    //   existingCustomer = await Customer.findOne({
+    //     $or: [{ email }, { phone }]
+    //   }).lean();
+    // }
 
-    console.log('Existing customer check result:', existingCustomer);
-
-    if (existingCustomer) {
-      if (email && existingCustomer.email === email) {
-        res.status(409).json({ success: false, message: 'Customer with this email already exists' });
-        return;
-      }
-      if (phone && existingCustomer.phone === phone) {
-        res.status(409).json({ success: false, message: 'Customer with this phone already exists' });
-        return;
-      }
-      res.status(409).json({ success: false, message: 'Customer with this email or phone already exists' });
-      return;
-    }
+    // if (existingCustomer) {
+    //   if (email && existingCustomer.email === email) {
+    //     res.status(409).json({ success: false, message: 'Customer with this email already exists' });
+    //     return;
+    //   }
+    //   if (phone && existingCustomer.phone === phone) {
+    //     res.status(409).json({ success: false, message: 'Customer with this phone already exists' });
+    //     return;
+    //   }
+    //   res.status(409).json({ success: false, message: 'Customer with this email or phone already exists' });
+    //   return;
+    // }
 
     const newCustomer = new Customer(req.body);
     const savedCustomer = await newCustomer.save();

@@ -132,6 +132,9 @@ export default function SalesHistoryPage() {
       const response = await apiClient.getSalesHistory(params)
       if (response.success) {
         setSalesData(response.data as SalesHistoryData)
+        if (searchTerm.trim()) {
+          toast.success(`Found ${(response.data as SalesHistoryData).pagination.totalRecords} results for "${searchTerm.trim()}"`)
+        }
       } else {
         console.error('Failed to fetch sales history:', response.message)
         toast.error('Failed to load sales history')

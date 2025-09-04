@@ -4,7 +4,7 @@ const customerSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   email: {
     type: String,
-    unique: true,
+    // unique: true,
     sparse: true,
     lowercase: true,
     trim: true
@@ -12,7 +12,7 @@ const customerSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: true,
-    unique: true,
+    // unique: true,
     trim: true
   },
   address: { type: String, trim: true },

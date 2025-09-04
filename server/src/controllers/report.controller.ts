@@ -1,5 +1,6 @@
 import type { Response } from 'express';
 import SalesOrder from '../models/SalesOrder.ts';
+import Customer from '../models/Customer.ts';
 import type { AuthRequest } from '../interfaces/interface.ts';
 
 export const getSalesHistory = async (req: AuthRequest, res: Response) => {
@@ -104,11 +105,31 @@ export const getSalesHistory = async (req: AuthRequest, res: Response) => {
     // Search functionality
     if (search) {
       const searchRegex = new RegExp(search as string, 'i');
+      console.log('Search term:', search);
+
+      // We need to handle search differently since customer is a populated field
+      // First, find customers that match the search term
+      const matchingCustomers = await Customer.find({
+        $or: [
+          { name: searchRegex },
+          { email: searchRegex },
+          { phone: searchRegex },
+          { company: searchRegex }
+        ]
+      }).select('_id').lean();
+
+      const customerIds = matchingCustomers.map(c => c._id);
+      console.log('Found matching customers:', customerIds.length);
+
       matchQuery.$or = [
         { orderNumber: searchRegex },
-        { 'customer.name': searchRegex },
         { notes: searchRegex }
       ];
+
+      // Only add customer search if we found matching customers
+      if (customerIds.length > 0) {
+        matchQuery.$or.push({ customer: { $in: customerIds } });
+      }
     }
 
     console.log('Sales History Query:', JSON.stringify(matchQuery, null, 2));
