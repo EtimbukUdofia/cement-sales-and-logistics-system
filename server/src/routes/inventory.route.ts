@@ -11,33 +11,32 @@ import {
   updateInventoryStock
 } from "../controllers/inventory.controller.ts";
 import isAdmin from "../middlewares/isAdmin.ts";
-import { verifyToken } from "../middlewares/verifyToken.ts";
 
 const router = express.Router();
 
 // Get all inventory with optional shop filter
-router.get('/', verifyToken, getAllInventory);
+router.get('/', getAllInventory);
 
 // Get inventory statistics
-router.get('/stats', verifyToken, getInventoryStats);
+router.get('/stats', getInventoryStats);
 
 // Get inventory summary for all shops (admin only)
 router.get('/summary', isAdmin, getInventorySummary);
 
 // Get inventory for specific shop
-router.get('/shop/:shopId', verifyToken, getInventoryByShop);
+router.get('/shop/:shopId', getInventoryByShop);
 
 // Get inventory for specific product
-router.get('/product/:productId', verifyToken, getInventoryByProduct);
+router.get('/product/:productId', getInventoryByProduct);
 
 // Get products low in stock
-router.get('/low-stock', verifyToken, getLowStockProducts);
+router.get('/low-stock', getLowStockProducts);
 
 // Update inventory stock quantity
-router.put('/:inventoryId', verifyToken, updateInventoryStock);
+router.put('/:inventoryId', updateInventoryStock);
 
 // Restock inventory
-router.post('/restock', verifyToken, restockInventory);
+router.post('/restock', restockInventory);
 
 // Adjust inventory levels manually (admin only)
 router.post('/adjust', isAdmin, adjustInventoryLevel);
