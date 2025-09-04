@@ -4,7 +4,7 @@
   "main": "src/server.ts",
   "scripts": {
     "build": "tsc",
-    "build:prod": "tsc && npm prune --production",
+    "build:prod": "npm install && tsc && npm prune --production",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/server.js",
     "start:prod": "NODE_ENV=production node dist/server.js",
