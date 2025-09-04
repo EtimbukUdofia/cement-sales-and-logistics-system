@@ -12,15 +12,14 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const SalesLoginForm = ({ className, ...props }: React.ComponentProps<"form">) => {
-  const {handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       loginCode: "",
     },
   });
 
-  const onSubmit = (data: FormData) => {
-    console.log("Form submitted:", data);
+  const onSubmit = () => {
     // Handle login logic here
   };
 
@@ -35,27 +34,27 @@ const SalesLoginForm = ({ className, ...props }: React.ComponentProps<"form">) =
           <div className="grid gap-3 relative">
             <InputOTP maxLength={6} className="w-full flex">
               <InputOTPGroup>
-                <InputOTPSlot index={0} className="border-gray-600"/>
+                <InputOTPSlot index={0} className="border-gray-600" />
               </InputOTPGroup>
               <InputOTPSeparator />
               <InputOTPGroup>
-                <InputOTPSlot index={1} className="border-gray-600"/>
+                <InputOTPSlot index={1} className="border-gray-600" />
               </InputOTPGroup>
               <InputOTPSeparator />
               <InputOTPGroup>
-                <InputOTPSlot index={2} className="border-gray-600"/>
+                <InputOTPSlot index={2} className="border-gray-600" />
               </InputOTPGroup>
               <InputOTPSeparator />
               <InputOTPGroup>
-                <InputOTPSlot index={3} className="border-gray-600"/>
+                <InputOTPSlot index={3} className="border-gray-600" />
               </InputOTPGroup>
               <InputOTPSeparator />
               <InputOTPGroup>
-                <InputOTPSlot index={4} className="border-gray-600"/>
+                <InputOTPSlot index={4} className="border-gray-600" />
               </InputOTPGroup>
               <InputOTPSeparator />
               <InputOTPGroup>
-                <InputOTPSlot index={5} className="border-gray-600"/>
+                <InputOTPSlot index={5} className="border-gray-600" />
               </InputOTPGroup>
             </InputOTP>
             {errors.loginCode && (

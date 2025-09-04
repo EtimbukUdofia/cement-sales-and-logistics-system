@@ -47,8 +47,7 @@ export function SignupForm({
         password: data.password,
       });
       navigate("/");
-    } catch (error) {
-      console.error("Signup failed:", error);
+    } catch {
       toast.error("Signup failed. Please try again.");
     }
   };

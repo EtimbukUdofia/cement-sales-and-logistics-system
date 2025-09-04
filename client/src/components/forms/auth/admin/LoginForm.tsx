@@ -40,8 +40,7 @@ export function LoginForm({
         data.password,
       );
       navigate("/");
-    } catch (err) {
-      console.error("Login failed:", err);
+    } catch {
       toast.error(`Login failed. ${error || "Please try again."}`);
     }
   };
