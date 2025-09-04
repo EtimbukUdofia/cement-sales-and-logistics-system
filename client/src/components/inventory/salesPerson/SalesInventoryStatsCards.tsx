@@ -1,58 +1,82 @@
-// import { Card, CardContent } from "@/components/ui/card"
-import { Package, Truck, ShoppingBag, AlertTriangle } from "lucide-react"
-import { StatCard } from "@/components/stat-card"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package, AlertTriangle, XCircle } from 'lucide-react';
+import type { InventoryStatsData } from '@/lib/api';
 
-// interface StatsCardProps {
-//   title: string
-//   value: string
-//   icon: React.ComponentType<{ size?: number; className?: string }>
-//   bgColor: string
-//   iconColor: string
-// }
+interface SalesInventoryStatsCardsProps {
+  stats: InventoryStatsData | null;
+  isLoading?: boolean;
+}
 
-// function StatsCard({ title, value, icon: Icon, bgColor, iconColor }: StatsCardProps) {
-//   return (
-//     <Card className={`${bgColor} border-0 text-white`}>
-//       <CardContent className="p-6">
-//         <div className="flex items-center justify-between">
-//           <div>
-//             <p className="text-sm font-medium text-white/80">{title}</p>
-//             <p className="text-2xl font-bold">{value}</p>
-//           </div>
-//           <Icon size={24} className={iconColor} />
-//         </div>
-//       </CardContent>
-//     </Card>
-//   )
-// }
+export function SalesInventoryStatsCards({ stats, isLoading }: SalesInventoryStatsCardsProps) {
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+              </CardTitle>
+              <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-8 w-16 bg-muted animate-pulse rounded mb-1" />
+              <div className="h-3 w-24 bg-muted animate-pulse rounded" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
-export function SalesInventoryStatsCards() {
+  const statsData = [
+    {
+      title: 'Total Products',
+      value: stats?.totalProducts || 0,
+      description: 'Active products in inventory',
+      icon: Package,
+      color: 'text-blue-600',
+    },
+    {
+      title: 'Total Quantity',
+      value: `${stats?.totalQuantity || 0} bags`,
+      description: 'Total bags in stock',
+      icon: Package,
+      color: 'text-green-600',
+    },
+    {
+      title: 'Low Stock Items',
+      value: stats?.lowStockItems || 0,
+      description: 'Products below minimum level',
+      icon: AlertTriangle,
+      color: 'text-yellow-600',
+    },
+    {
+      title: 'Out of Stock',
+      value: stats?.outOfStockItems || 0,
+      description: 'Products completely out of stock',
+      icon: XCircle,
+      color: 'text-red-600',
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <StatCard
-        description="Total Inventory"
-        content="1488 Bags"
-        icon={<Package className="text-white/90" size={24} />}
-        iconBgClassName="bg-blue-500"
-      />
-      <StatCard
-        description="Most Sold Stock"
-        content="Dangote"
-        icon={<Truck className="text-white/90" size={24} />}
-        iconBgClassName="bg-green-500"
-      />
-      <StatCard
-        description="Products"
-        content="5"
-        icon={<ShoppingBag className="text-white/90" size={24} />}
-        iconBgClassName="bg-purple-500"
-      />
-      <StatCard
-        description="Low Stock Items"
-        content="0"
-        icon={<AlertTriangle className="text-white/90" size={24} />}
-        iconBgClassName="bg-red-500"
-      />
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {statsData.map((stat) => {
+        const Icon = stat.icon;
+        return (
+          <Card key={stat.title}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <Icon className={`h-4 w-4 ${stat.color}`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">{stat.description}</p>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
-  )
+  );
 }

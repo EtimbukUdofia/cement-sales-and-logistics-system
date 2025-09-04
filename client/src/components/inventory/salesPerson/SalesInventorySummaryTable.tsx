@@ -1,5 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import {
   Table,
   TableBody,
@@ -7,51 +5,80 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package, AlertTriangle, XCircle } from 'lucide-react';
+import type { InventoryData } from '@/lib/api';
 
-interface InventoryItem {
-  id: string
-  shop: string
-  product: string
-  quantity: string
-  status: 'Good Stock' | 'Low Stock' | 'Out of Stock'
-  lastUpdated: string
+interface SalesInventorySummaryTableProps {
+  inventory: InventoryData[];
+  isLoading?: boolean;
 }
 
-// Mock data - this would come from your API
-const inventoryData: InventoryItem[] = [
-  {
-    id: '1',
-    shop: 'Shop A - Lagos Main',
-    product: 'Dangote 3X Cement',
-    quantity: '6 bags',
-    status: 'Good Stock',
-    lastUpdated: '2025 - 8 - 12'
-  },
-  {
-    id: '2',
-    shop: 'Shop A - Lagos Main',
-    product: 'Dangote 3X Cement',
-    quantity: '6 bags',
-    status: 'Good Stock',
-    lastUpdated: '2025 - 8 - 12'
-  }
-]
+export function SalesInventorySummaryTable({ inventory, isLoading }: SalesInventorySummaryTableProps) {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+    }).format(amount);
+  };
 
-function getStatusBadge(status: string) {
-  switch (status) {
-    case 'Good Stock':
-      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{status}</Badge>
-    case 'Low Stock':
-      return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">{status}</Badge>
-    case 'Out of Stock':
-      return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{status}</Badge>
-    default:
-      return <Badge variant="secondary">{status}</Badge>
-  }
-}
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-NG', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
 
-export function SalesInventorySummaryTable() {
+  const getStockStatus = (quantity: number, minStockLevel: number) => {
+    if (quantity === 0) {
+      return { status: 'Out of Stock', variant: 'destructive' as const, icon: XCircle };
+    } else if (quantity <= minStockLevel) {
+      return { status: 'Low Stock', variant: 'secondary' as const, icon: AlertTriangle };
+    }
+    return { status: 'Good Stock', variant: 'default' as const, icon: Package };
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Inventory Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center space-x-4">
+                <div className="h-12 w-12 bg-muted animate-pulse rounded" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-4 w-40 bg-muted animate-pulse rounded" />
+                  <div className="h-3 w-24 bg-muted animate-pulse rounded" />
+                </div>
+                <div className="h-6 w-20 bg-muted animate-pulse rounded" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (inventory.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Inventory Summary</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center py-8">
+          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No inventory items found</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -60,27 +87,68 @@ export function SalesInventorySummaryTable() {
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="text-muted-foreground font-medium">Shop</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Product</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Quantity</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Status</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Last Updated</TableHead>
+            <TableRow>
+              <TableHead>Product</TableHead>
+              <TableHead>Brand</TableHead>
+              <TableHead>Size</TableHead>
+              <TableHead>Current Stock</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Unit Price</TableHead>
+              <TableHead>Total Value</TableHead>
+              <TableHead>Last Restocked</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {inventoryData.map((item) => (
-              <TableRow key={item.id} className="hover:bg-muted/50">
-                <TableCell className="font-medium">{item.shop}</TableCell>
-                <TableCell>{item.product}</TableCell>
-                <TableCell>{item.quantity}</TableCell>
-                <TableCell>{getStatusBadge(item.status)}</TableCell>
-                <TableCell className="text-muted-foreground">{item.lastUpdated}</TableCell>
-              </TableRow>
-            ))}
+            {inventory.map((item) => {
+              const stockStatus = getStockStatus(item.quantity, item.minStockLevel);
+              const StatusIcon = stockStatus.icon;
+              const totalValue = item.quantity * item.product.price;
+
+              return (
+                <TableRow key={item._id}>
+                  <TableCell className="font-medium">
+                    <div>
+                      <div className="font-medium">{item.product.name}</div>
+                      {item.product.variant && (
+                        <div className="text-sm text-muted-foreground">
+                          {item.product.variant}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{item.product.brand}</TableCell>
+                  <TableCell>{item.product.size}kg</TableCell>
+                  <TableCell>
+                    <div className="text-center">
+                      <div className="font-medium">{item.quantity}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Min: {item.minStockLevel}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={stockStatus.variant}
+                      className="flex items-center gap-1 w-fit"
+                    >
+                      <StatusIcon size={12} />
+                      {stockStatus.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{formatCurrency(item.product.price)}</TableCell>
+                  <TableCell>{formatCurrency(totalValue)}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {item.lastRestocked
+                      ? formatDate(item.lastRestocked)
+                      : 'Never'
+                    }
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>
     </Card>
-  )
+  );
 }
