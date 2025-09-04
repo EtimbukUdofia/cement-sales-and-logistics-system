@@ -1,7 +1,12 @@
-import express, { type Response, type Request } from 'express';
+import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+import compression from 'compression';
+import morgan from 'morgan';
+
 
 import connectDB from './db/connectDB.js';
 import authRotes from './routes/auth.route.ts';
@@ -19,14 +24,70 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Production security and performance middleware
+if (process.env.NODE_ENV === 'production') {
+  // Security headers
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+  }));
+
+  // Compression
+  app.use(compression());
+
+  // Request logging
+  app.use(morgan('combined'));
+
+  // Rate limiting
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use('/api', limiter);
+
+  // Stricter rate limiting for auth endpoints
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limit each IP to 10 auth requests per windowMs
+    message: 'Too many authentication attempts, please try again later.',
+  });
+  app.use('/api/v0/auth', authLimiter);
+} else {
+  // Development logging
+  app.use(morgan('dev'));
+}
+
+// Disable 'X-Powered-By' header for security
+app.disable('x-powered-by');
+
+// Enhanced CORS configuration for production
 const corsOptions = {
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: process.env.NODE_ENV === 'production'
+    ? process.env.CORS_ORIGIN || process.env.CLIENT_URL
+    : process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
+  optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
 }
 
 app.use(cors(corsOptions));
-app.use(cookieParser());
-app.use(express.json());
+
+// Enhanced cookie parser with security options for production
+if (process.env.NODE_ENV === 'production') {
+  app.use(cookieParser(process.env.JWT_SECRET));
+} else {
+  app.use(cookieParser());
+}
+
+app.use(express.json({ limit: '10mb' })); // Add request size limit for security
 
 app.get('/', (_req: Request, res: Response) => {
   res.send('API is running...');
