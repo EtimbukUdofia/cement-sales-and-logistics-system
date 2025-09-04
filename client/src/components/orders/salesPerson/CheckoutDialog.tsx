@@ -21,6 +21,7 @@ import { ShoppingCart, User, CreditCard, MapPin, FileText } from "lucide-react"
 interface CheckoutDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onCheckoutSuccess?: () => void
 }
 
 interface CheckoutFormData {
@@ -32,7 +33,7 @@ interface CheckoutFormData {
   notes: string
 }
 
-export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
+export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: CheckoutDialogProps) {
   const items = useCartStore(state => state.items)
   const getTotalItems = useCartStore(state => state.getTotalItems)
   const getTotalPrice = useCartStore(state => state.getTotalPrice)
@@ -116,6 +117,8 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
           notes: ""
         })
         setErrors({})
+        // Trigger product refresh
+        onCheckoutSuccess?.()
       }
     } catch (error) {
       console.error("Checkout error:", error)

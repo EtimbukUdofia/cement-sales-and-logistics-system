@@ -104,9 +104,10 @@ function ProductCard({ product }: ProductCardProps) {
 interface ProductGridProps {
   searchTerm?: string;
   selectedBrand?: string;
+  refreshTrigger?: number;
 }
 
-export function ProductGrid({ searchTerm = '', selectedBrand = 'all' }: ProductGridProps) {
+export function ProductGrid({ searchTerm = '', selectedBrand = 'all', refreshTrigger = 0 }: ProductGridProps) {
   const { currentShop } = useShop();
   const { user } = useAuthStore();
   const [products, setProducts] = useState<Product[]>([]);
@@ -242,7 +243,7 @@ export function ProductGrid({ searchTerm = '', selectedBrand = 'all' }: ProductG
       isMounted = false;
       abortController.abort();
     };
-  }, [currentShop, user?.role]);  // Filter products based on search term and selected brand
+  }, [currentShop, user?.role, refreshTrigger]);  // Add refreshTrigger to dependencies
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.variant.toLowerCase().includes(searchTerm.toLowerCase());

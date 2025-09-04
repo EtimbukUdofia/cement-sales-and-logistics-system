@@ -7,7 +7,7 @@ import { CheckoutDialog } from "./CheckoutDialog"
 import { toast } from "sonner"
 import { useState } from "react"
 
-export function CartDetailsSection() {
+export function CartDetailsSection({ onCheckoutSuccess }: { onCheckoutSuccess?: () => void }) {
   const items = useCartStore(state => state.items);
   const removeItem = useCartStore(state => state.removeItem);
   const updateQuantity = useCartStore(state => state.updateQuantity);
@@ -141,6 +141,7 @@ export function CartDetailsSection() {
       <CheckoutDialog
         open={showCheckoutDialog}
         onOpenChange={setShowCheckoutDialog}
+        onCheckoutSuccess={onCheckoutSuccess}
       />
     </Card>
   )

@@ -10,6 +10,12 @@ import {
 export default function SalesOrdersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedBrand, setSelectedBrand] = useState('all')
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  const handleCheckoutSuccess = () => {
+    // Increment refresh trigger to force ProductGrid to refetch data
+    setRefreshTrigger(prev => prev + 1)
+  }
 
   return (
     <div className="flex-1 p-6">
@@ -34,12 +40,13 @@ export default function SalesOrdersPage() {
           <ProductGrid
             searchTerm={searchTerm}
             selectedBrand={selectedBrand}
+            refreshTrigger={refreshTrigger}
           />
         </div>
 
         {/* Cart Details Sidebar */}
         <div className="lg:col-span-1">
-          <CartDetailsSection />
+          <CartDetailsSection onCheckoutSuccess={handleCheckoutSuccess} />
         </div>
       </div>
     </div>
