@@ -105,7 +105,6 @@ export const getSalesHistory = async (req: AuthRequest, res: Response) => {
     // Search functionality
     if (search) {
       const searchRegex = new RegExp(search as string, 'i');
-      console.log('Search term:', search);
 
       // We need to handle search differently since customer is a populated field
       // First, find customers that match the search term
@@ -119,7 +118,6 @@ export const getSalesHistory = async (req: AuthRequest, res: Response) => {
       }).select('_id').lean();
 
       const customerIds = matchingCustomers.map(c => c._id);
-      console.log('Found matching customers:', customerIds.length);
 
       matchQuery.$or = [
         { orderNumber: searchRegex },
@@ -131,11 +129,6 @@ export const getSalesHistory = async (req: AuthRequest, res: Response) => {
         matchQuery.$or.push({ customer: { $in: customerIds } });
       }
     }
-
-    console.log('Sales History Query:', JSON.stringify(matchQuery, null, 2));
-    console.log('User Role:', userRole, 'User ID:', userId, 'Shop ID:', shopId);
-    console.log('Date range:', startDate, 'to', endDate);
-
     // Pagination
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
@@ -222,7 +215,6 @@ export const getSalesHistory = async (req: AuthRequest, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Error getting sales history:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve sales history'

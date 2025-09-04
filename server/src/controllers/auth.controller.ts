@@ -23,7 +23,7 @@ export const signup = async (req: AuthRequest, res: Response): Promise<void> => 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({ username, email, password: hashedPassword });
-    const result = await newUser.save();
+    await newUser.save();
 
     // generate jwt with shopId included
     generateTokenAndSetCookie(res, {
@@ -44,9 +44,7 @@ export const signup = async (req: AuthRequest, res: Response): Promise<void> => 
       }
     })
 
-    console.log(result);
   } catch (error: any) {
-    console.error('Signup error:', error.message);
     res.status(500).json({ success: false, message: 'Server error during signup' });
   }
 };
@@ -91,16 +89,14 @@ export const login = async (req: AuthRequest, res: Response): Promise<void> => {
       }
     });
 
-    console.log(`${user.email} logged in`);
   } catch (error: any) {
-    console.error('Login error:', error.message);
     res.status(500).json({ success: false, message: 'Server error during login' });
   }
 
 };
 
 export const logout = async (_req: AuthRequest, res: Response): Promise<void> => {
-  res.clearCookie("cement_logistics_token");
+  res.clearCookie("sessionID");
 
   res.status(200).json({ success: true, message: "Logged out successfully" });
 };
@@ -125,7 +121,6 @@ export const checkAuth = async (req: AuthRequest, res: Response): Promise<void> 
       }
     });
   } catch (error) {
-    console.error('Check auth error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error during authentication check' });
   }
 }

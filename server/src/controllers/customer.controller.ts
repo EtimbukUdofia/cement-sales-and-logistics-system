@@ -86,7 +86,6 @@ export const searchCustomers = async (req: AuthRequest, res: Response): Promise<
       count: customers.length
     });
   } catch (error) {
-    console.error('Search Customers Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error searching customers' });
   }
 };
@@ -97,7 +96,6 @@ export const getAllCustomers = async (_req: AuthRequest, res: Response): Promise
     const customers = await Customer.find().lean();
     res.status(200).json({ success: true, customers });
   } catch (error) {
-    console.error('Get All Customers Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching customers' });
   }
 };
@@ -124,7 +122,6 @@ export const getCustomerById = async (req: AuthRequest, res: Response): Promise<
     }
     res.status(200).json({ success: true, customer });
   } catch (error) {
-    console.error('Get Customer By ID Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching customer' });
   }
 };
@@ -166,7 +163,6 @@ export const createCustomer = async (req: AuthRequest, res: Response): Promise<v
     const savedCustomer = await newCustomer.save();
     res.status(201).json({ success: true, customer: savedCustomer });
   } catch (error) {
-    console.error('Create Customer Error:', (error as Error).message);
 
     // handle duplicate key (race condition) if unique index exists on email/phone
     const errAny = error as any;
@@ -231,7 +227,6 @@ export const updateCustomer = async (req: AuthRequest, res: Response): Promise<v
 
     res.status(200).json({ success: true, message: 'Customer updated successfully', customer: updatedCustomer });
   } catch (error) {
-    console.error('Update Customer Error:', (error as Error).message);
 
     // handle duplicate
     const errAny = error as any;
@@ -265,7 +260,6 @@ export const deleteCustomer = async (req: AuthRequest, res: Response): Promise<v
     }
     res.status(200).json({ success: true, message: 'Customer deleted successfully', customer: deletedCustomer });
   } catch (error) {
-    console.error('Delete Customer Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error deleting customer' });
   }
 };
@@ -290,7 +284,6 @@ export const getOrdersByCustomer = async (req: AuthRequest, res: Response): Prom
     const orders = await SalesOrder.find({ customer: castedId }).lean();
     res.status(200).json({ success: true, orders });
   } catch (error) {
-    console.error('Get Orders By Customer Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching orders for customer' });
   }
 };
@@ -311,6 +304,5 @@ export const updateCustomerStats = async (customerId: string, orderAmount: numbe
       }
     );
   } catch (error) {
-    console.error('Update Customer Stats Error:', (error as Error).message);
   }
 };

@@ -42,7 +42,7 @@ const addUser = async (req: AuthRequest, res: Response): Promise<void> => {
       shopId: shopId || undefined
     });
 
-    const result = await newUser.save();
+    await newUser.save();
 
     res.status(201).json({
       success: true,
@@ -53,9 +53,7 @@ const addUser = async (req: AuthRequest, res: Response): Promise<void> => {
       }
     });
 
-    console.log('User created:', result._id);
   } catch (error) {
-    console.error('User Creation Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error during user creation' });
   }
 };
@@ -66,7 +64,6 @@ const getAllUsers = async (_req: AuthRequest, res: Response): Promise<void> => {
     const users = await User.find().select('-password -__v');
     res.status(200).json({ success: true, users });
   } catch (error) {
-    console.error('Get All Users Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching users' });
   }
 };
@@ -94,7 +91,6 @@ const getUserById = async (req: AuthRequest, res: Response): Promise<void> => {
 
     res.status(200).json({ success: true, user });
   } catch (error) {
-    console.error('Get User By ID Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching user' });
   }
 };
@@ -105,7 +101,6 @@ const getAllSalesPersons = async (_req: AuthRequest, res: Response): Promise<voi
     const salesPersons = await User.find({ role: 'salesPerson' }).select('-password -__v');
     res.status(200).json({ success: true, salesPersons });
   } catch (error) {
-    console.error('Get All SalesPersons Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching sales persons' });
   }
 };
@@ -139,7 +134,7 @@ const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
         return;
       }
     }
-    
+
     const user = await User.findById(id);
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
@@ -155,7 +150,7 @@ const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
         return;
       }
     }
-    
+
     if (role && role === 'salesPerson' && !shopId) {
       res.status(400).json({ success: false, message: 'shopId is required for salesPerson role' });
       return;
@@ -181,9 +176,7 @@ const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
       }
     });
 
-    console.log(`User ${updatedUser._id} updated`);
   } catch (error) {
-    console.error('Update User Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error updating user' });
   }
 };
@@ -196,7 +189,7 @@ const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
     res.status(400).json({ success: false, message: 'User id is required' });
     return;
   }
-  
+
   if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ success: false, message: 'Invalid user id' });
     return;
@@ -210,9 +203,7 @@ const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
     }
 
     res.status(200).json({ success: true, message: 'User deleted successfully' });
-    console.log(`User ${id} deleted`);
   } catch (error) {
-    console.error('Delete User Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error deleting user' });
   }
 };

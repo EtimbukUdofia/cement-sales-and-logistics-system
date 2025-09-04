@@ -10,7 +10,6 @@ export const getAllShops = async (_req: AuthRequest, res: Response): Promise<voi
     const shops = await Shop.find().populate('manager', 'username email').lean();
     res.status(200).json({ success: true, shops });
   } catch (error) {
-    console.error('Get All Shops Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching shops' });
   }
 };
@@ -37,7 +36,6 @@ export const getShopById = async (req: AuthRequest, res: Response): Promise<void
     }
     res.status(200).json({ success: true, shop });
   } catch (error) {
-    console.error('Get Shop By ID Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching shop' });
   }
 };
@@ -88,7 +86,6 @@ export const createShop = async (req: AuthRequest, res: Response): Promise<void>
     await newShop.populate('manager', 'username email');
     res.status(201).json({ success: true, shop: newShop });
   } catch (err) {
-    console.error('Create Shop Error:', (err as Error).message);
 
     const errAny = err as any;
     if (errAny.code === 11000 || errAny.codeName === 'DuplicateKey' || errAny.keyValue) {
@@ -160,7 +157,6 @@ export const updateShop = async (req: AuthRequest, res: Response): Promise<void>
     await updatedShop.populate('manager', 'username email');
     res.status(200).json({ success: true, shop: updatedShop });
   } catch (err) {
-    console.error('Update Shop Error:', (err as Error).message);
     const errAny = err as any;
     if (errAny.code === 11000 || errAny.codeName === 'DuplicateKey' || errAny.keyValue) {
       res.status(409).json({ success: false, message: 'Shop with this name or phone already exists' });
@@ -192,7 +188,6 @@ export const deleteShop = async (req: AuthRequest, res: Response): Promise<void>
     }
     res.status(200).json({ success: true, message: 'Shop deleted successfully', shop: deletedShop });
   } catch (error) {
-    console.error('Delete Shop Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error deleting shop' });
   }
 };

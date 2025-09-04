@@ -37,7 +37,6 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
 
     res.status(201).json({ success: true, message: 'Product created successfully', product: result });
   } catch (error) {
-    console.error('Product Creation Error:', (error as Error).message);
     const errAny = error as any;
     if (errAny?.code === 11000 || errAny?.codeName === 'DuplicateKey') {
       const conflictFields = errAny.keyValue ? Object.keys(errAny.keyValue) : ['unknown'];
@@ -58,7 +57,6 @@ export const getProducts = async (_req: AuthRequest, res: Response): Promise<voi
     const products = await Product.find();
     res.status(200).json({ success: true, products });
   } catch (error) {
-    console.error('Get Products Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching products' });
   }
 };
@@ -129,7 +127,6 @@ export const getProductsWithInventory = async (req: AuthRequest, res: Response):
       shopId
     });
   } catch (error) {
-    console.error('Get Products with Inventory Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching products with inventory' });
   }
 };
@@ -157,7 +154,6 @@ export const getProductById = async (req: AuthRequest, res: Response): Promise<v
 
     res.status(200).json({ success: true, product });
   } catch (error) {
-    console.error('Get Product By ID Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching product' });
   }
 };
@@ -190,7 +186,6 @@ export const updateProduct = async (req: AuthRequest, res: Response): Promise<vo
 
     res.status(200).json({ success: true, message: 'Product updated successfully', product: updatedProduct });
   } catch (error) {
-    console.error('Update Product Error:', (error as Error).message);
     const errAny = error as any;
     if (errAny?.code === 11000 || errAny?.codeName === 'DuplicateKey') {
       const conflictFields = errAny.keyValue ? Object.keys(errAny.keyValue) : ['unknown'];
@@ -228,7 +223,6 @@ export const deleteProduct = async (req: AuthRequest, res: Response): Promise<vo
 
     res.status(200).json({ success: true, message: 'Product deleted successfully', product: deletedProduct });
   } catch (error) {
-    console.error('Delete Product Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error deleting product' });
   }
 };
@@ -239,7 +233,6 @@ export const getDistinctBrands = async (_req: AuthRequest, res: Response): Promi
     const brands = (await Product.distinct('brand')).filter(Boolean).sort();
     res.status(200).json({ success: true, brands });
   } catch (error) {
-    console.error('Get Distinct Brands Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching brands' });
   }
 };
@@ -260,7 +253,6 @@ export const getProductsByBrand = async (req: AuthRequest, res: Response): Promi
     const products = await Product.find({ brand: regex });
     res.status(200).json({ success: true, products });
   } catch (error) {
-    console.error('Get Products By Brand Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching products by brand' });
   }
 };

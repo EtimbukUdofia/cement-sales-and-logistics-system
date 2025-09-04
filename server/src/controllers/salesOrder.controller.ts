@@ -107,7 +107,6 @@ export const getAllSalesOrders = async (_req: AuthRequest, res: Response): Promi
     const salesOrders = await SalesOrder.find().populate('customer').populate('shop').populate('items.product').lean();
     res.status(200).json({ success: true, salesOrders });
   } catch (error) {
-    console.error('Get All Sales Orders Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching sales orders' });
   }
 };
@@ -138,7 +137,6 @@ export const getSalesOrderById = async (req: AuthRequest, res: Response): Promis
 
     res.status(200).json({ success: true, salesOrder });
   } catch (error) {
-    console.error('Get Sales Order By ID Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching sales order' });
   }
 };
@@ -235,7 +233,6 @@ export const createSalesOrder = async (req: AuthRequest, res: Response): Promise
     try {
       await updateCustomerStats(customer, finalTotal, true);
     } catch (statsError) {
-      console.error('Error updating customer stats:', statsError);
       // Don't fail the order creation if stats update fails
     }
 
@@ -248,7 +245,6 @@ export const createSalesOrder = async (req: AuthRequest, res: Response): Promise
 
     res.status(201).json({ success: true, message: 'Sales order created successfully and inventory updated', salesOrder: populated });
   } catch (error) {
-    console.error('Create Sales Order Error:', (error as Error).message);
     const errAny = error as any;
     if (errAny.code === 11000 || errAny.codeName === 'DuplicateKey') {
       res.status(400).json({ success: false, message: 'Duplicate order number. A sales order with this order number already exists.' });
@@ -299,7 +295,6 @@ export const updateSalesOrderStatus = async (req: AuthRequest, res: Response): P
         }));
         await restoreInventoryQuantities(currentOrder.shop.toString(), itemsForInventory);
       } catch (inventoryError) {
-        console.error('Error restoring inventory:', inventoryError);
         res.status(500).json({
           success: false,
           message: 'Failed to restore inventory when cancelling order'
@@ -329,7 +324,6 @@ export const updateSalesOrderStatus = async (req: AuthRequest, res: Response): P
 
     res.status(200).json({ success: true, message, salesOrder: updated });
   } catch (error) {
-    console.error('Update Sales Order Status Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error updating sales order status' });
   }
 };
@@ -366,7 +360,6 @@ export const deleteSalesOrder = async (req: AuthRequest, res: Response): Promise
         }));
         await restoreInventoryQuantities(salesOrder.shop.toString(), itemsForInventory);
       } catch (inventoryError) {
-        console.error('Error restoring inventory:', inventoryError);
         res.status(500).json({
           success: false,
           message: 'Failed to restore inventory when deleting order'
@@ -384,7 +377,6 @@ export const deleteSalesOrder = async (req: AuthRequest, res: Response): Promise
       salesOrder: salesOrder
     });
   } catch (error) {
-    console.error('Delete Sales Order Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error deleting sales order' });
   }
 };
@@ -412,7 +404,6 @@ export const getSalesOrdersByCustomer = async (req: AuthRequest, res: Response):
 
     res.status(200).json({ success: true, salesOrders });
   } catch (error) {
-    console.error('Get Sales Orders By Customer Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching sales orders for customer' });
   }
 };
@@ -440,7 +431,6 @@ export const getSalesOrdersByShop = async (req: AuthRequest, res: Response): Pro
 
     res.status(200).json({ success: true, salesOrders });
   } catch (error) {
-    console.error('Get Sales Orders By Shop Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching sales orders for shop' });
   }
 };
