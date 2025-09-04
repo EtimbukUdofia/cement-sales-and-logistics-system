@@ -28,7 +28,7 @@ export function SidebarNavLinks() {
     { to: "/sales/deliveries", icon: Truck, label: "Deliveries" },
     // { to: "/sales/invoices", icon: Package, label: "Invoices" },
     // { to: "/sales/payments", icon: Store, label: "Payments" },
-    { to: "/sales/reports", icon: BarChart2, label: "Reports" },
+    { to: "/sales/history", icon: BarChart2, label: "History" },
   ];
 
   // Get nav items based on user role

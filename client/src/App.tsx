@@ -1,10 +1,11 @@
 import { Navigate, Outlet, Route, Routes } from 'react-router'
+import { useEffect, type JSX } from 'react'
+
 import { LoginForm } from './components/forms/auth/admin/LoginForm'
 import { SignupForm } from './components/forms/auth/admin/SignupForm'
 import AuthLayout from './components/layouts/AuthLayout'
 import NotFound from './pages/NotFound'
 import { useAuthStore } from './store/authStore'
-import { useEffect, type JSX } from 'react'
 import LoadingSpinner from './components/LoadingSpinner'
 import Dashboard from './pages/Admin/dashboard/Dashboard'
 import MainLayout from './components/layouts/MainLayout'
@@ -17,8 +18,8 @@ import RoutesPage from './pages/Admin/Routes/RoutesPage'
 import TrucksPage from './pages/Admin/Trucks/TrucksPage'
 import SalesInventoryPage from './pages/Sales/Inventory/SalesInventoryPage'
 import SalesOrdersPage from './pages/Sales/Orders/SalesOrdersPage'
-import SalesReportsPage from './pages/Sales/Reports/SalesReportsPage'
 import ReportsPage from './pages/Admin/Reports/ReportsPage'
+import SalesHistoryPage from './pages/Sales/Reports/SalesHistoryPage'
 
 const ProtectedRoute = () => {
   const { isAuthenticated } = useAuthStore();
@@ -98,7 +99,7 @@ function App() {
             {/* <Route path="customers" element={<div>Manage Customers Page</div>} /> */}
             <Route path="orders" element={<SalesOrdersPage />} />
             <Route path="inventory" element={<SalesInventoryPage />} />
-            <Route path="reports" element={<SalesReportsPage />} />
+            <Route path="history" element={<SalesHistoryPage />} />
             <Route path="deliveries" element={<div>Manage Deliveries Page</div>} />
             {/* <Route path="invoices" element={<div>Manage Invoices Page</div>} />
           <Route path="payments" element={<div>Manage Payments Page</div>} /> */}

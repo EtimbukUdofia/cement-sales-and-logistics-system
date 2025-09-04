@@ -185,6 +185,11 @@ class ApiClient {
     return this.request(`/reports?${params.toString()}`, options);
   }
 
+  // Sales History API methods
+  async getSalesHistory(params: URLSearchParams, options?: RequestInit) {
+    return this.request(`/reports/history?${params.toString()}`, options);
+  }
+
   // Customer API methods
   async getCustomers() {
     return this.request('/customers');
