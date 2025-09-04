@@ -74,9 +74,11 @@ export const getInventorySummary = async (_req: AuthRequest, res: Response): Pro
   }
 };
 
-// get inventory details for a specific shop
+// get inventory details for a specific shop with role-based access
 export const getInventoryByShop = async (req: AuthRequest, res: Response): Promise<void> => {
   const { shopId } = req.params;
+  const { user } = req;
+
   if (!shopId) {
     res.status(400).json({ success: false, message: 'Shop id is required' });
     return;
@@ -87,16 +89,26 @@ export const getInventoryByShop = async (req: AuthRequest, res: Response): Promi
     return;
   }
 
+  // Role-based access control
+  if (user?.role === 'salesPerson' && user?.shopId && user.shopId !== shopId) {
+    res.status(403).json({ success: false, message: 'Access denied. You can only view inventory for your assigned shop' });
+    return;
+  }
+
   try {
     const existingShop = await Shop.findById(shopId).lean();
     if (!existingShop) {
       res.status(404).json({ success: false, message: 'Shop not found' });
       return;
     }
+
     const inventoryItems = await Inventory.find({ shop: shopId })
-      .populate('product', 'name brand size price')
+      .populate('product', 'name variant brand size price imageUrl')
+      .populate('shop', 'name location')
+      .sort({ 'product.name': 1 })
       .lean();
-    res.status(200).json({ success: true, inventoryItems });
+
+    res.status(200).json({ success: true, data: inventoryItems });
   } catch (error) {
     console.error('Get Inventory By Shop Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching inventory for shop' });
@@ -248,5 +260,172 @@ export const getLowStockProducts = async (_req: AuthRequest, res: Response): Pro
   } catch (error) {
     console.error('Get Low Stock Products Error:', (error as Error).message);
     res.status(500).json({ success: false, message: 'Server error fetching low stock products' });
+  }
+};
+
+// Get all inventory items across all shops (admin only) or for user's shop (salesPerson)
+export const getAllInventory = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { user } = req;
+    let query: any = {};
+
+    // Role-based filtering: salesPerson can only see their shop's inventory
+    if (user?.role === 'salesPerson') {
+      if (!user.shopId) {
+        res.status(400).json({ success: false, message: 'Sales person must be assigned to a shop' });
+        return;
+      }
+      query.shop = user.shopId;
+    }
+    // Admin can see all inventory (no filter applied)
+
+    const inventory = await Inventory.find(query)
+      .populate('product', 'name variant brand size price imageUrl')
+      .populate('shop', 'name location')
+      .sort({ 'shop.name': 1, 'product.name': 1 })
+      .lean();
+
+    res.status(200).json({ success: true, data: inventory });
+  } catch (error) {
+    console.error('Get All Inventory Error:', (error as Error).message);
+    res.status(500).json({ success: false, message: 'Server error fetching inventory' });
+  }
+};
+
+// Get inventory statistics with optional shop filter
+export const getInventoryStats = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { shop } = req.query;
+    const { user } = req;
+
+    // Build query based on user role and shop filter
+    let matchQuery: any = {};
+
+    // If user is a sales person, only show stats for their shop
+    if (user?.role === 'salesPerson' && user?.shopId) {
+      matchQuery.shop = new mongoose.Types.ObjectId(user.shopId);
+    } else if (shop && mongoose.Types.ObjectId.isValid(shop as string)) {
+      // If shop filter is provided and valid
+      matchQuery.shop = new mongoose.Types.ObjectId(shop as string);
+    }
+
+    const stats = await Inventory.aggregate([
+      { $match: matchQuery },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'product',
+          foreignField: '_id',
+          as: 'productDetails',
+        },
+      },
+      { $unwind: { path: '$productDetails', preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: null,
+          totalProducts: { $sum: 1 },
+          totalQuantity: { $sum: '$quantity' },
+          totalValue: {
+            $sum: {
+              $multiply: [
+                { $ifNull: ['$quantity', 0] },
+                { $ifNull: ['$productDetails.price', 0] },
+              ],
+            },
+          },
+          lowStockItems: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $gt: ['$quantity', 0] },
+                    { $lte: ['$quantity', '$minStockLevel'] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          },
+          outOfStockItems: {
+            $sum: {
+              $cond: [
+                { $eq: ['$quantity', 0] },
+                1,
+                0
+              ]
+            }
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalProducts: 1,
+          totalQuantity: 1,
+          totalValue: 1,
+          lowStockItems: 1,
+          outOfStockItems: 1,
+        },
+      },
+    ]);
+
+    const result = stats[0] || {
+      totalProducts: 0,
+      totalQuantity: 0,
+      totalValue: 0,
+      lowStockItems: 0,
+      outOfStockItems: 0,
+    };
+
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    console.error('Get Inventory Stats Error:', (error as Error).message);
+    res.status(500).json({ success: false, message: 'Server error fetching inventory stats' });
+  }
+};
+
+// Update inventory stock quantity
+export const updateInventoryStock = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { inventoryId } = req.params;
+  const { quantity } = req.body;
+
+  if (!inventoryId || typeof quantity !== 'number' || quantity < 0) {
+    res.status(400).json({ success: false, message: 'Valid inventory ID and quantity are required' });
+    return;
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(inventoryId)) {
+    res.status(400).json({ success: false, message: 'Invalid inventory ID' });
+    return;
+  }
+
+  try {
+    const inventoryItem = await Inventory.findById(inventoryId);
+    if (!inventoryItem) {
+      res.status(404).json({ success: false, message: 'Inventory item not found' });
+      return;
+    }
+
+    inventoryItem.quantity = quantity;
+    if (quantity > 0) {
+      inventoryItem.lastRestocked = new Date();
+    }
+
+    await inventoryItem.save();
+
+    const updatedItem = await Inventory.findById(inventoryId)
+      .populate('product', 'name variant brand size price imageUrl')
+      .populate('shop', 'name location')
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      message: 'Inventory updated successfully',
+      data: updatedItem
+    });
+  } catch (error) {
+    console.error('Update Inventory Stock Error:', (error as Error).message);
+    res.status(500).json({ success: false, message: 'Server error updating inventory' });
   }
 };
