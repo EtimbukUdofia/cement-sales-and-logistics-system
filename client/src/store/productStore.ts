@@ -60,7 +60,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch products';
       set({ error: errorMessage, isLoading: false });
-      console.error('Error fetching products:', error);
     }
   },
 
@@ -79,7 +78,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create product';
       set({ error: errorMessage, isLoading: false });
-      console.error('Error creating product:', error);
       return false;
     }
   },
@@ -99,7 +97,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update product';
       set({ error: errorMessage, isLoading: false });
-      console.error('Error updating product:', error);
       return false;
     }
   },
@@ -121,7 +118,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete product';
       set({ error: errorMessage, isLoading: false });
-      console.error('Error deleting product:', error);
       return false;
     }
   },

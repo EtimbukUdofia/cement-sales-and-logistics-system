@@ -27,6 +27,7 @@ type AuthState = {
   error: string | null;
   isAuthenticated: boolean;
   isCheckingAuth: boolean;
+  hasCheckedAuth: boolean;
   signup: (userData: SignupData) => Promise<void>;
   checkAuth: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
@@ -39,12 +40,13 @@ type UserData = {
   password: string;
 }
 
-export const useAuthStore = create<AuthState>()((set) => ({
+export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   isLoading: false,
   error: null,
   isAuthenticated: false,
-  isCheckingAuth: true,
+  isCheckingAuth: false,
+  hasCheckedAuth: false,
 
   signup: async (userData: UserData) => {
     set({ isLoading: true, error: null });
@@ -64,12 +66,14 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
 
   checkAuth: async () => {
-    set({ isCheckingAuth: true, error: null });
+    const { hasCheckedAuth } = get();
+    // Prevent double execution
+    if (hasCheckedAuth) return;
+
+    set({ isCheckingAuth: true, error: null, hasCheckedAuth: true });
     try {
       const response = await axios.get(`${API_URL}/check-auth`);
-      console.log('CheckAuth response:', response.data);
       set({ user: response.data.user, isAuthenticated: true, isCheckingAuth: false });
-      console.log('CheckAuth user state set:', response.data.user);
     } catch (error) {
       let errorMessage = "An error occurred while checking authentication";
       if (axios.isAxiosError(error) && error.response && error.response.status !== 401) {
@@ -87,9 +91,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await axios.post(`${API_URL}/login`, { email, password });
-      console.log('Login response:', response.data);
       set({ user: response.data.user, isAuthenticated: true, isLoading: false });
-      console.log('User state set:', response.data.user);
     } catch (error) {
       let errorMessage = "An error occurred while logging in";
       if (axios.isAxiosError(error) && error.response) {

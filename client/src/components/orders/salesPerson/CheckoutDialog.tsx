@@ -120,8 +120,7 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
         // Trigger product refresh
         onCheckoutSuccess?.()
       }
-    } catch (error) {
-      console.error("Checkout error:", error)
+    } catch {
       toast.error("Failed to process checkout. Please try again.")
     }
   }
