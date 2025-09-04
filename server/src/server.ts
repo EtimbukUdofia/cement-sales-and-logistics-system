@@ -11,6 +11,7 @@ import productRoutes from './routes/product.route.ts';
 import customerRoutes from './routes/customer.route.ts';
 import inventoryRoutes from './routes/inventory.route.ts';
 import salesOrderRoutes from './routes/salesOrder.route.ts';
+import reportRoutes from './routes/report.route.ts';
 import { verifyToken } from './middlewares/verifyToken.ts';
 
 dotenv.config();
@@ -27,18 +28,25 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 
-app.get('/', (_req: Request, res: Response) => { 
+app.get('/', (_req: Request, res: Response) => {
   res.send('API is running...');
+});
+
+app.get('/api/v0/ping', (_req: Request, res: Response) => {
+  res.json({ message: 'pong' });
+});
+
+app.get('/api/v0/health', (_req: Request, res: Response) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 app.use('/api/v0/auth', authRotes);
 
-// protected routes. check if authenticated and role is admin
 app.use(verifyToken);
 app.use('/api/v0/users', userRoutes);
 app.use('/api/v0/customers', customerRoutes);
 // app.use('/api/v0/suppliers', require('./routes/supplier.route.ts').default);
-app.use('/api/v0/shops',shopRoutes);
+app.use('/api/v0/shops', shopRoutes);
 app.use('/api/v0/products', productRoutes);
 app.use('/api/v0/inventory', inventoryRoutes);
 // app.use('/api/v0/purchase-orders', require('./routes/purchaseOrder.route.ts').default);
@@ -47,15 +55,7 @@ app.use('/api/v0/sales-orders', salesOrderRoutes);
 // app.use('/api/v0/trucks', require('./routes/truck.route.ts').default);
 // app.use('/api/v0/routes', require('./routes/route.route.ts').default);
 // app.use('/api/v0/deliveries', require('./routes/delivery.route.ts').default);
-// app.use('/api/v0/reports', require('./routes/report.route.ts').default);
-
-app.get('/api/v0/ping', (_req: Request, res: Response) => { 
-  res.json({ message: 'pong' });
-});
-
-app.get('/api/v0/health', (_req: Request, res: Response) => { 
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });  
-});
+app.use('/api/v0/reports', reportRoutes);
 
 app.get(/(.*)/, (_req: Request, res: Response) => {
   res.status(404).json({ message: 'Route not found' });
