@@ -3,7 +3,7 @@ import type { AuthRequest, DecodedToken } from "../interfaces/interface.ts";
 import jwt from "jsonwebtoken";
 
 export const verifyToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  const token = req.cookies.cement_logistics_token;
+  const token = req.cookies.sessionID;
 
   if (!token) {
     return res.status(401).json({ success: false, message: 'No token provided' });
@@ -28,7 +28,6 @@ export const verifyToken = async (req: AuthRequest, res: Response, next: NextFun
 
     next();
   } catch (err: any) {
-    console.error("Error verifying token:", err.message);
     return res.status(500).json({ success: false, message: 'Server Error while trying to validate token' });
   }
 };

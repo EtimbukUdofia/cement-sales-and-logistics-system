@@ -16,7 +16,7 @@ const generateTokenAndSetCookie = (res: Response, payload: Payload): void => {
 
   const token = jwt.sign({ ...payload }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN as StringValue || "1d" });
 
-  res.cookie('cement_logistics_token', token, {
+  res.cookie('sessionID', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: "strict",

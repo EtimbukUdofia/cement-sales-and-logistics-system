@@ -3,7 +3,7 @@ import type { AuthRequest } from "../interfaces/interface.ts";
 import jwt from "jsonwebtoken";
 
 const alreadyLoggedIn = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const token = req.cookies.cement_logistics_token;
+  const token = req.cookies.sessionID;
 
   if (token) {
     try {
