@@ -162,7 +162,6 @@ class ApiClient {
         throw error;
       }
 
-      console.error(`API request failed: ${endpoint}`, error);
       throw error;
     }
   }
