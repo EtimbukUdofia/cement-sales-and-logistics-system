@@ -5,6 +5,8 @@ import Product from '../models/Product.ts';
 import Shop from '../models/Shop.ts';
 import Inventory from '../models/Inventory.ts';
 import User from '../models/User.ts';
+import Customer from '../models/Customer.ts';
+import SalesOrder from '../models/SalesOrder.ts';
 
 dotenv.config();
 
@@ -27,6 +29,8 @@ const seedData = async () => {
     await Shop.deleteMany({});
     await Inventory.deleteMany({});
     await User.deleteMany({});
+    await Customer.deleteMany({});
+    await SalesOrder.deleteMany({});
 
     console.log('Existing data cleared');
 
@@ -168,6 +172,134 @@ const seedData = async () => {
 
     const inventory = await Inventory.insertMany(inventoryRecords);
     console.log(`${inventory.length} inventory records created`);
+
+    // Create sample customers
+    const customers = await Customer.insertMany([
+      {
+        name: 'ABC Construction',
+        email: 'contact@abcconstruction.com',
+        phone: '+234 801 234 5678',
+        address: 'Victoria Island, Lagos',
+        company: 'ABC Construction Limited',
+        customerType: 'business',
+        preferredDeliveryAddress: 'Victoria Island, Lagos',
+        preferredPaymentMethod: 'transfer'
+      },
+      {
+        name: 'XYZ Builders Ltd',
+        email: 'info@xyzbuilders.com',
+        phone: '+234 802 345 6789',
+        address: 'Wuse 2, Abuja',
+        company: 'XYZ Builders Limited',
+        customerType: 'business',
+        preferredDeliveryAddress: 'Wuse 2, Abuja',
+        preferredPaymentMethod: 'pos'
+      },
+      {
+        name: 'Delta Properties',
+        email: 'sales@deltaproperties.com',
+        phone: '+234 803 456 7890',
+        address: 'GRA, Port Harcourt',
+        company: 'Delta Properties',
+        customerType: 'business',
+        preferredDeliveryAddress: 'GRA, Port Harcourt',
+        preferredPaymentMethod: 'cash'
+      },
+      {
+        name: 'John Okoro',
+        email: 'john.okoro@gmail.com',
+        phone: '+234 804 567 8901',
+        address: 'Ikeja, Lagos',
+        customerType: 'individual',
+        preferredDeliveryAddress: 'Ikeja, Lagos',
+        preferredPaymentMethod: 'pos'
+      },
+      {
+        name: 'Mercy Construction',
+        email: 'mercy@mercyconstruction.com',
+        phone: '+234 805 678 9012',
+        address: 'Garki, Abuja',
+        company: 'Mercy Construction Services',
+        customerType: 'contractor',
+        preferredDeliveryAddress: 'Garki, Abuja',
+        preferredPaymentMethod: 'transfer'
+      }
+    ]);
+    console.log(`${customers.length} customers created`);
+
+    // Create sample sales orders
+    const salesPersons = users.filter(user => user.role === 'salesPerson');
+    const salesOrders = [];
+
+    // Generate sales orders for the last 3 months
+    const currentDate = new Date();
+
+    for (let monthsBack = 2; monthsBack >= 0; monthsBack--) {
+      const monthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - monthsBack, 1);
+      const ordersThisMonth = Math.floor(Math.random() * 10) + 5; // 5-15 orders per month
+
+      for (let i = 0; i < ordersThisMonth; i++) {
+        const randomDay = Math.floor(Math.random() * 28) + 1;
+        const orderDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), randomDay);
+
+        const randomCustomer = customers[Math.floor(Math.random() * customers.length)];
+        const randomSalesPerson = salesPersons[Math.floor(Math.random() * salesPersons.length)];
+
+        if (!randomCustomer || !randomSalesPerson) {
+          continue; // Skip if no customer or salesperson available
+        }
+
+        const randomShop = randomSalesPerson.shopId ?
+          shops.find(shop => shop._id.toString() === randomSalesPerson.shopId!.toString()) :
+          shops[Math.floor(Math.random() * shops.length)];
+
+        // Create order items (1-3 products per order)
+        const itemCount = Math.floor(Math.random() * 3) + 1;
+        const orderItems = [];
+        let totalAmount = 0;
+
+        for (let j = 0; j < itemCount; j++) {
+          const randomProduct = products[Math.floor(Math.random() * products.length)];
+
+          if (!randomProduct) {
+            continue; // Skip if no product available
+          }
+
+          const quantity = Math.floor(Math.random() * 20) + 1; // 1-20 bags
+          const unitPrice = randomProduct.price;
+          const totalPrice = quantity * unitPrice;
+
+          orderItems.push({
+            product: randomProduct._id,
+            quantity,
+            unitPrice,
+            totalPrice
+          });
+
+          totalAmount += totalPrice;
+        }
+
+        const orderNumber = `ORD-${orderDate.getFullYear()}${String(orderDate.getMonth() + 1).padStart(2, '0')}${String(orderDate.getDate()).padStart(2, '0')}-${String(i + 1).padStart(3, '0')}`;
+
+        salesOrders.push({
+          orderNumber,
+          customer: randomCustomer._id,
+          shop: randomShop!._id,
+          items: orderItems,
+          totalAmount,
+          paymentMethod: ['cash', 'pos', 'transfer'][Math.floor(Math.random() * 3)] as 'cash' | 'pos' | 'transfer',
+          orderDate,
+          deliveryDate: new Date(orderDate.getTime() + 2 * 24 * 60 * 60 * 1000), // 2 days later
+          status: ['Pending', 'Confirmed', 'Delivered'][Math.floor(Math.random() * 3)] as 'Pending' | 'Confirmed' | 'Delivered',
+          salesPerson: randomSalesPerson._id,
+          deliveryAddress: randomCustomer.preferredDeliveryAddress || randomCustomer.address,
+          notes: `Order processed by ${randomSalesPerson.username}`
+        });
+      }
+    }
+
+    const createdSalesOrders = await SalesOrder.insertMany(salesOrders);
+    console.log(`${createdSalesOrders.length} sales orders created`);
 
     console.log('\nSeed data created successfully!');
     console.log('\nSample Login Credentials:');
