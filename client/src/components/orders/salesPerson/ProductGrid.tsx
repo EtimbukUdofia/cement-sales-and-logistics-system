@@ -71,9 +71,11 @@ function ProductCard({ product }: ProductCardProps) {
               <p className="text-xs text-muted-foreground">{product.size}kg size</p>
             </div>
           </div>
-          <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">
-            {product.variant}
-          </Badge>
+          {product.variant && (
+            <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">
+              {product.variant}
+            </Badge>
+          )}
         </div>
 
         <div className="space-y-2">
