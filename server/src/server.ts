@@ -18,7 +18,7 @@ import customerRoutes from './routes/customer.route.js';
 import inventoryRoutes from './routes/inventory.route.js';
 import salesOrderRoutes from './routes/salesOrder.route.js';
 import reportRoutes from './routes/report.route.js';
-import { verifyToken } from './middlewares/verifyToken.js';
+// import { verifyToken } from './middlewares/verifyToken.js';
 
 dotenv.config();
 
@@ -36,8 +36,9 @@ if (process.env.NODE_ENV === 'production') {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
+        connectSrc: ["'self'", process.env.API_URL || "'self'", "https:", "wss:"],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-eval'"],
         imgSrc: ["'self'", "data:", "https:"],
       },
     },
@@ -94,21 +95,17 @@ if (process.env.NODE_ENV === 'production') {
 
 app.use(express.json({ limit: '10mb' })); // Add request size limit for security
 
-app.get('/', (_req: Request, res: Response) => {
-  res.send('API is running...');
-});
-
 app.get('/api/v0/ping', (_req: Request, res: Response) => {
   res.json({ message: 'pong' });
 });
 
 app.get('/api/v0/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+}); 
 
 app.use('/api/v0/auth', authRotes);
 
-app.use(verifyToken);
+// app.use(verifyToken);
 app.use('/api/v0/users', userRoutes);
 app.use('/api/v0/customers', customerRoutes);
 // app.use('/api/v0/suppliers', require('./routes/supplier.route.js').default);
@@ -129,7 +126,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(clientDistPath));
 
   // Catch-all handler: send back React's index.html file for any non-API routes
-  app.get('*', (_req: Request, res: Response) => {
+  app.get(/(.*)/, (_req: Request, res: Response) => {
     res.sendFile(path.join(clientDistPath, 'index.html'));
   });
 } else {
