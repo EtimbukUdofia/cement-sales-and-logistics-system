@@ -1,5 +1,6 @@
 // API configuration and helper functions
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v0';
+// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v0';
+const API_BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/api/v0" : "/api/v0";
 
 interface ApiResponse<T = unknown> {
   success: boolean;
