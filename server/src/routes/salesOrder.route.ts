@@ -1,8 +1,11 @@
 import express from 'express';
 import { createSalesOrder, deleteSalesOrder, getAllSalesOrders, getSalesOrderById, getSalesOrdersByCustomer, getSalesOrdersByShop, updateSalesOrderStatus } from '../controllers/salesOrder.controller.js';
 import isAdmin from '../middlewares/isAdmin.js';
+import { verifyToken } from '../middlewares/verifyToken.js';
 
 const router = express.Router();
+
+router.use(verifyToken);
 
 router.get('/', isAdmin, getAllSalesOrders);
 router.get('/:id', getSalesOrderById);

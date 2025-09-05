@@ -11,8 +11,11 @@ import {
   updateInventoryStock
 } from "../controllers/inventory.controller.js";
 import isAdmin from "../middlewares/isAdmin.js";
+import { verifyToken } from "../middlewares/verifyToken.js";
 
 const router = express.Router();
+
+router.use(verifyToken);
 
 // Get all inventory with optional shop filter
 router.get('/', getAllInventory);

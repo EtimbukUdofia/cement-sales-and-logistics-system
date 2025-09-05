@@ -1,8 +1,11 @@
 import express from 'express';
 import { createProduct, deleteProduct, getDistinctBrands, getProductById, getProducts, getProductsWithInventory, getProductsByBrand, updateProduct } from '../controllers/product.controller.js';
 import isAdmin from '../middlewares/isAdmin.js';
+import { verifyToken } from '../middlewares/verifyToken.js';
 
 const router = express.Router();
+
+router.use(verifyToken);
 
 router.get('/', getProducts);
 router.get('/with-inventory/:shopId', getProductsWithInventory);
