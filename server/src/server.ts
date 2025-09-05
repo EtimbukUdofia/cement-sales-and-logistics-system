@@ -2,6 +2,7 @@ import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
+import path from 'path';
 // import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -122,9 +123,21 @@ app.use('/api/v0/sales-orders', salesOrderRoutes);
 // app.use('/api/v0/deliveries', require('./routes/delivery.route.js').default);
 app.use('/api/v0/reports', reportRoutes);
 
-app.get(/(.*)/, (_req: Request, res: Response) => {
-  res.status(404).json({ message: 'Route not found' });
-});
+// Serve frontend static files in production
+if (process.env.NODE_ENV === 'production') {
+  const clientDistPath = path.resolve(process.cwd(), 'client', 'dist');
+  app.use(express.static(clientDistPath));
+
+  // Catch-all handler: send back React's index.html file for any non-API routes
+  app.get('*', (_req: Request, res: Response) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+} else {
+  // Development 404 handler for API routes only
+  app.get('/api/*', (_req: Request, res: Response) => {
+    res.status(404).json({ message: 'API route not found' });
+  });
+}
 
 // global error handler
 app.use((err: Error, _req: Request, res: Response, _next: Function) => {

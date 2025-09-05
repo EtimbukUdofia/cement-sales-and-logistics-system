@@ -1,0 +1,33 @@
+{
+  "name": "cement_sales_and_logistics_system",
+  "version": "1.0.0",
+  "main": "server/dist/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "cross-env NODE_ENV=development nodemon --watch server --ext ts,js --exec \"tsx server/src/server.ts\"",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm install && npm --prefix client install && npm --prefix client run build && tsc -p server/tsconfig.json",
+    "start": "cross-env NODE_ENV=production node server/dist/server.js",
+    "postinstall": "npm --prefix client install --no-audit --no-fund",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EtimbukUdofia/cement-sales-and-logistics-system.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EtimbukUdofia/cement-sales-and-logistics-system/issues"
+  },
+  "homepage": "https://github.com/EtimbukUdofia/cement-sales-and-logistics-system#readme",
+  "description": "",
+  "dependencies": {},
+  "devDependencies": {
+    "cross-env": "^10.0.0",
+    "concurrently": "^8.2.0",
+    "nodemon": "^3.1.1",
+    "tsx": "^3.12.8"
+  }
+}
