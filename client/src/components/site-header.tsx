@@ -3,10 +3,14 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ShopInfo } from "./shop/ShopInfo";
 import { useAuthStore } from "@/store/authStore";
-import { Search, Bell } from "lucide-react"
+import { Bell, LogOut } from "lucide-react"
 
 export function SiteHeader() {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = async () => {
+    await logout();
+  }
 
   return (
     <header className="flex h-12 sm:h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
@@ -25,8 +29,8 @@ export function SiteHeader() {
           </div>
         )}
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
-          <Button variant="ghost" size="icon" className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full w-6 h-6 sm:w-10 sm:h-10">
-            <Search size={10} className="sm:w-4 sm:h-4" />
+          <Button onClick={handleLogout} variant="ghost" size="icon" className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full w-6 h-6 sm:w-10 sm:h-10">
+            <LogOut size={10} className="sm:w-4 sm:h-4" />
           </Button>
           <Button variant="ghost" size="icon" className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full w-6 h-6 sm:w-10 sm:h-10">
             <Bell size={10} className="sm:w-4 sm:h-4" />
