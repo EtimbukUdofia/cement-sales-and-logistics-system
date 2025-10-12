@@ -11,21 +11,21 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // build: {
-  //   // Optimize for production
-  //   minify: 'terser',
-  //   sourcemap: false,
-  //   rollupOptions: {
-  //     output: {
-  //       // Remove console.log in production builds
-  //       manualChunks: {
-  //         vendor: ['react', 'react-dom'],
-  //       },
-  //     },
-  //   },
-  // },
-  // esbuild: {
-  //   // Remove console.log and debugger statements in production
-  //   drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
-  // },
+  build: {
+    // Optimize for production
+    minify: 'terser',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        // Remove console.log in production builds
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+        },
+      },
+    },
+  },
+  esbuild: {
+    // Remove console.log and debugger statements in production
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+  },
 })
