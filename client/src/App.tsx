@@ -20,6 +20,7 @@ import SalesInventoryPage from './pages/Sales/Inventory/SalesInventoryPage'
 import SalesOrdersPage from './pages/Sales/Orders/SalesOrdersPage'
 import ReportsPage from './pages/Admin/Reports/ReportsPage'
 import SalesHistoryPage from './pages/Sales/Reports/SalesHistoryPage'
+import ShopsPage from './pages/Admin/Shops/ShopsPage'
 
 const ProtectedRoute = () => {
   const { isAuthenticated } = useAuthStore();
@@ -80,7 +81,7 @@ function App() {
           <Route path="/admin" element={<MainLayout />} >
             <Route index element={<Dashboard />} />
             <Route path="products" element={<ProductsPage />} />
-            <Route path="shops" element={<div>Manage shops page</div>} />
+            <Route path="shops" element={<ShopsPage />} />
             <Route path="suppliers" element={<SuppliersPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="orders/create" element={<div>Create Purchase Order Page</div>} />
