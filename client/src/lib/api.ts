@@ -67,15 +67,26 @@ interface UpdateUserData {
 interface ShopData {
   _id: string;
   name: string;
-  location: string;
-  address?: string;
-  phone?: string;
+  address: string;
+  phone: string;
   email?: string;
   manager?: {
     _id: string;
     username: string;
     email: string;
   };
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CreateShopData {
+  name: string;
+  address: string;
+  manager?: string;
+  phone: string;
+  email?: string;
+  isActive?: boolean;
 }
 
 interface CreateProductData {
@@ -225,6 +236,29 @@ class ApiClient {
     return this.request(`/shops/${id}`, options) as Promise<{ success: boolean; shop: ShopData }>;
   }
 
+  async createShop(shopData: CreateShopData, options?: RequestInit): Promise<{ success: boolean; shop?: ShopData; message?: string }> {
+    return this.request('/shops', {
+      method: 'POST',
+      body: JSON.stringify(shopData),
+      ...options,
+    }) as Promise<{ success: boolean; shop?: ShopData; message?: string }>;
+  }
+
+  async updateShop(id: string, shopData: CreateShopData, options?: RequestInit): Promise<{ success: boolean; shop?: ShopData; message?: string }> {
+    return this.request(`/shops/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(shopData),
+      ...options,
+    }) as Promise<{ success: boolean; shop?: ShopData; message?: string }>;
+  }
+
+  async deleteShop(id: string, options?: RequestInit): Promise<{ success: boolean; message?: string }> {
+    return this.request(`/shops/${id}`, {
+      method: 'DELETE',
+      ...options,
+    }) as Promise<{ success: boolean; message?: string }>;
+  }
+
   // Reports API methods
   async getReports(params: URLSearchParams, options?: RequestInit) {
     return this.request(`/reports?${params.toString()}`, options);
@@ -302,4 +336,16 @@ class ApiClient {
 export const apiClient = new ApiClient(API_BASE_URL);
 
 // Export types for use in components
-export type { ApiResponse, SalesOrderData, CustomerData, CreateProductData, InventoryData, InventoryStatsData, UserData, CreateUserData, UpdateUserData, ShopData };
+export type {
+  ApiResponse,
+  SalesOrderData,
+  CustomerData,
+  CreateProductData,
+  InventoryData,
+  InventoryStatsData,
+  UserData,
+  CreateUserData,
+  UpdateUserData,
+  ShopData,
+  CreateShopData
+};
