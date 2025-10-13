@@ -221,3 +221,173 @@ export const getSalesHistory = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
+export const getSalesDashboardMetrics = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+    const shopId = req.user?.shopId;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+
+    // Base query - filter by user role
+    let baseQuery: any = {};
+    if (userRole === 'salesPerson') {
+      baseQuery.salesPerson = userId;
+    } else if (userRole === 'admin' && shopId) {
+      baseQuery.shop = shopId;
+    }
+
+    // Date ranges
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const endOfYesterday = new Date(yesterday);
+    endOfYesterday.setHours(23, 59, 59, 999);
+
+    const thisWeek = new Date();
+    thisWeek.setDate(thisWeek.getDate() - thisWeek.getDay());
+    thisWeek.setHours(0, 0, 0, 0);
+
+    const thisMonth = new Date();
+    thisMonth.setDate(1);
+    thisMonth.setHours(0, 0, 0, 0);
+
+    // Today's metrics
+    const todaysOrders = await SalesOrder.find({
+      ...baseQuery,
+      orderDate: { $gte: today, $lte: endOfToday }
+    });
+
+    const todaysSales = todaysOrders.length;
+    const todaysRevenue = todaysOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // Yesterday's metrics for comparison
+    const yesterdaysOrders = await SalesOrder.find({
+      ...baseQuery,
+      orderDate: { $gte: yesterday, $lte: endOfYesterday }
+    });
+
+    const yesterdaysSales = yesterdaysOrders.length;
+    const yesterdaysRevenue = yesterdaysOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // This week's metrics
+    const thisWeeksOrders = await SalesOrder.find({
+      ...baseQuery,
+      orderDate: { $gte: thisWeek, $lte: endOfToday }
+    });
+
+    const thisWeeksSales = thisWeeksOrders.length;
+    const thisWeeksRevenue = thisWeeksOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // This month's metrics
+    const thisMonthsOrders = await SalesOrder.find({
+      ...baseQuery,
+      orderDate: { $gte: thisMonth, $lte: endOfToday }
+    });
+
+    const thisMonthsSales = thisMonthsOrders.length;
+    const thisMonthsRevenue = thisMonthsOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // Calculate percentage changes
+    const salesChange = yesterdaysSales === 0
+      ? (todaysSales > 0 ? 100 : 0)
+      : ((todaysSales - yesterdaysSales) / yesterdaysSales) * 100;
+
+    const revenueChange = yesterdaysRevenue === 0
+      ? (todaysRevenue > 0 ? 100 : 0)
+      : ((todaysRevenue - yesterdaysRevenue) / yesterdaysRevenue) * 100;
+
+    // Top products this month
+    const topProducts = await SalesOrder.aggregate([
+      {
+        $match: {
+          ...baseQuery,
+          orderDate: { $gte: thisMonth, $lte: endOfToday }
+        }
+      },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.product._id',
+          productName: { $first: '$items.product.name' },
+          brand: { $first: '$items.product.brand' },
+          variant: { $first: '$items.product.variant' },
+          size: { $first: '$items.product.size' },
+          totalQuantity: { $sum: '$items.quantity' },
+          totalRevenue: { $sum: '$items.totalPrice' },
+          orderCount: { $sum: 1 }
+        }
+      },
+      { $sort: { totalQuantity: -1 } },
+      { $limit: 5 }
+    ]);
+
+    // Recent orders (last 5)
+    const recentOrders = await SalesOrder.find(baseQuery)
+      .populate('customer', 'name company')
+      .populate('shop', 'name location')
+      .sort({ orderDate: -1 })
+      .limit(5)
+      .select('orderNumber customer shop totalAmount status orderDate');
+
+    // Sales trend for the last 7 days
+    const salesTrend = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+
+      const dayOrders = await SalesOrder.find({
+        ...baseQuery,
+        orderDate: { $gte: date, $lte: endDate }
+      });
+
+      salesTrend.push({
+        date: date.toISOString().split('T')[0],
+        sales: dayOrders.length,
+        revenue: dayOrders.reduce((sum, order) => sum + order.totalAmount, 0)
+      });
+    }
+
+    const response = {
+      today: {
+        sales: todaysSales,
+        revenue: todaysRevenue,
+        salesChange: Math.round(salesChange * 100) / 100,
+        revenueChange: Math.round(revenueChange * 100) / 100
+      },
+      thisWeek: {
+        sales: thisWeeksSales,
+        revenue: thisWeeksRevenue
+      },
+      thisMonth: {
+        sales: thisMonthsSales,
+        revenue: thisMonthsRevenue
+      },
+      topProducts,
+      recentOrders,
+      salesTrend
+    };
+
+    res.status(200).json({
+      success: true,
+      message: 'Sales dashboard metrics retrieved successfully',
+      data: response
+    });
+
+  } catch (error) {
+    console.error('Error getting sales dashboard metrics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve sales dashboard metrics'
+    });
+  }
+};
