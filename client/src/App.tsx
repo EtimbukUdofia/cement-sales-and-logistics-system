@@ -21,6 +21,7 @@ import SalesOrdersPage from './pages/Sales/Orders/SalesOrdersPage'
 import ReportsPage from './pages/Admin/Reports/ReportsPage'
 import SalesHistoryPage from './pages/Sales/Reports/SalesHistoryPage'
 import ShopsPage from './pages/Admin/Shops/ShopsPage'
+import SalesDashboard from './pages/Sales/Dashboard/SalesDashboard'
 
 const ProtectedRoute = () => {
   const { isAuthenticated } = useAuthStore();
@@ -96,7 +97,7 @@ function App() {
         {/* Sales Routes */}
         <Route element={<RoleBasedRoute allowedRoles={['salesPerson']} />} >
           <Route path="/sales" element={<MainLayout />} >
-            <Route index element={<div>Sales Dashboard</div>} />
+            <Route index element={<SalesDashboard />} />
             {/* <Route path="customers" element={<div>Manage Customers Page</div>} /> */}
             <Route path="orders" element={<SalesOrdersPage />} />
             <Route path="inventory" element={<SalesInventoryPage />} />
