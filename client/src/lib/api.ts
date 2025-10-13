@@ -269,6 +269,11 @@ class ApiClient {
     return this.request(`/reports/history?${params.toString()}`, options);
   }
 
+  // Dashboard Metrics API method
+  async getDashboardMetrics(options?: RequestInit) {
+    return this.request('/reports/dashboard-metrics', options);
+  }
+
   // Customer API methods
   async getCustomers() {
     return this.request('/customers');
