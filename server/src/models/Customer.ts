@@ -49,9 +49,9 @@ const customerSchema = new mongoose.Schema({
 });
 
 // Indexes for fast search during checkout
-customerSchema.index({ name: 'text', phone: 'text', email: 'text' });
+// customerSchema.index({ name: 'text', phone: 'text', email: 'text' });
 // Removed duplicate phone index - phone is already indexed in the text index above
-customerSchema.index({ name: 1 }); // Fast name lookup
+// customerSchema.index({ name: 1 }); // Fast name lookup
 customerSchema.index({ isActive: 1, lastOrderDate: -1 }); // Recent active customers
 
 // Virtual for full search text

@@ -67,9 +67,9 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
       newErrors.customerEmail = "Please enter a valid email address"
     }
 
-    if (!formData.deliveryAddress.trim()) {
-      newErrors.deliveryAddress = "Delivery address is required"
-    }
+    // if (!formData.deliveryAddress.trim()) {
+    //   newErrors.deliveryAddress = "Delivery address is required"
+    // }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -195,7 +195,7 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
             <div className="space-y-2">
               <Label htmlFor="deliveryAddress" className="flex items-center gap-2">
                 <MapPin size={16} />
-                Delivery Address *
+                Delivery Address
               </Label>
               <Textarea
                 id="deliveryAddress"
