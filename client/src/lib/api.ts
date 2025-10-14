@@ -274,6 +274,14 @@ class ApiClient {
     return this.request('/reports/dashboard-metrics', options);
   }
 
+  // Admin Dashboard Metrics API method
+  async getAdminDashboardMetrics(shopId?: string, options?: RequestInit) {
+    const url = shopId
+      ? `/reports/admin-dashboard-metrics?shopId=${encodeURIComponent(shopId)}`
+      : '/reports/admin-dashboard-metrics';
+    return this.request(url, options);
+  }
+
   // Customer API methods
   async getCustomers() {
     return this.request('/customers');

@@ -391,3 +391,290 @@ export const getSalesDashboardMetrics = async (req: AuthRequest, res: Response) 
     });
   }
 };
+
+export const getAdminDashboardMetrics = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+    const { shopId: filterShopId } = req.query;
+
+    if (!userId || userRole !== 'admin') {
+      return res.status(401).json({ success: false, message: 'Admin access required' });
+    }
+
+    // Base query - admin can see all shop data
+    let baseQuery: any = {};
+
+    // Admins have full access to all shops regardless of their assigned shop
+    // If a specific shop is requested, filter by that shop
+    // If no filter specified, show all data
+    if (filterShopId && typeof filterShopId === 'string') {
+      baseQuery.shop = filterShopId;
+    }
+    // If no shopId filter provided, show all shops data (default behavior)
+
+    // Date ranges
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const thisWeek = new Date();
+    thisWeek.setDate(thisWeek.getDate() - thisWeek.getDay());
+    thisWeek.setHours(0, 0, 0, 0);
+
+    const thisMonth = new Date();
+    thisMonth.setDate(1);
+    thisMonth.setHours(0, 0, 0, 0);
+
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1, 1);
+    const endOfLastMonth = new Date();
+    endOfLastMonth.setDate(0);
+    endOfLastMonth.setHours(23, 59, 59, 999);
+
+    // Today's metrics
+    const [todaysOrders, yesterdaysOrders] = await Promise.all([
+      SalesOrder.find({
+        ...baseQuery,
+        orderDate: { $gte: today, $lte: endOfToday }
+      }),
+      SalesOrder.find({
+        ...baseQuery,
+        orderDate: { $gte: yesterday, $lte: new Date(yesterday.getTime() + 24 * 60 * 60 * 1000 - 1) }
+      })
+    ]);
+
+    const todaysSales = todaysOrders.length;
+    const todaysRevenue = todaysOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const yesterdaysSales = yesterdaysOrders.length;
+    const yesterdaysRevenue = yesterdaysOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // This month vs last month
+    const [thisMonthOrders, lastMonthOrders] = await Promise.all([
+      SalesOrder.find({
+        ...baseQuery,
+        orderDate: { $gte: thisMonth, $lte: endOfToday }
+      }),
+      SalesOrder.find({
+        ...baseQuery,
+        orderDate: { $gte: lastMonth, $lte: endOfLastMonth }
+      })
+    ]);
+
+    const thisMonthsSales = thisMonthOrders.length;
+    const thisMonthsRevenue = thisMonthOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const lastMonthsSales = lastMonthOrders.length;
+    const lastMonthsRevenue = lastMonthOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // Calculate percentage changes
+    const salesChange = yesterdaysSales === 0
+      ? (todaysSales > 0 ? 100 : 0)
+      : ((todaysSales - yesterdaysSales) / yesterdaysSales) * 100;
+
+    const revenueChange = yesterdaysRevenue === 0
+      ? (todaysRevenue > 0 ? 100 : 0)
+      : ((todaysRevenue - yesterdaysRevenue) / yesterdaysRevenue) * 100;
+
+    const monthlySalesChange = lastMonthsSales === 0
+      ? (thisMonthsSales > 0 ? 100 : 0)
+      : ((thisMonthsSales - lastMonthsSales) / lastMonthsSales) * 100;
+
+    const monthlyRevenueChange = lastMonthsRevenue === 0
+      ? (thisMonthsRevenue > 0 ? 100 : 0)
+      : ((thisMonthsRevenue - lastMonthsRevenue) / lastMonthsRevenue) * 100;
+
+    // Top performing sales people this month
+    const topSalesPeople = await SalesOrder.aggregate([
+      {
+        $match: {
+          ...baseQuery,
+          orderDate: { $gte: thisMonth, $lte: endOfToday }
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'salesPerson',
+          foreignField: '_id',
+          as: 'salesPersonDetails'
+        }
+      },
+      { $unwind: '$salesPersonDetails' },
+      {
+        $group: {
+          _id: '$salesPerson',
+          salesPersonName: { $first: '$salesPersonDetails.username' },
+          salesPersonEmail: { $first: '$salesPersonDetails.email' },
+          totalSales: { $sum: 1 },
+          totalRevenue: { $sum: '$totalAmount' },
+          avgOrderValue: { $avg: '$totalAmount' }
+        }
+      },
+      { $sort: { totalRevenue: -1 } },
+      { $limit: 5 }
+    ]);
+
+    // Top products this month
+    const topProducts = await SalesOrder.aggregate([
+      {
+        $match: {
+          ...baseQuery,
+          orderDate: { $gte: thisMonth, $lte: endOfToday }
+        }
+      },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.product._id',
+          productName: { $first: '$items.product.name' },
+          brand: { $first: '$items.product.brand' },
+          variant: { $first: '$items.product.variant' },
+          size: { $first: '$items.product.size' },
+          totalQuantity: { $sum: '$items.quantity' },
+          totalRevenue: { $sum: '$items.totalPrice' },
+          orderCount: { $sum: 1 }
+        }
+      },
+      { $sort: { totalRevenue: -1 } },
+      { $limit: 5 }
+    ]);
+
+    // Recent orders (last 10)
+    const recentOrders = await SalesOrder.find(baseQuery)
+      .populate('customer', 'name company')
+      .populate('shop', 'name location')
+      .populate('salesPerson', 'username email')
+      .sort({ orderDate: -1 })
+      .limit(10)
+      .select('orderNumber customer shop salesPerson totalAmount status orderDate');
+
+    // Sales trend for the last 30 days
+    const salesTrend = [];
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+
+      const dayOrders = await SalesOrder.find({
+        ...baseQuery,
+        orderDate: { $gte: date, $lte: endDate }
+      });
+
+      salesTrend.push({
+        date: date.toISOString().split('T')[0],
+        sales: dayOrders.length,
+        revenue: dayOrders.reduce((sum, order) => sum + order.totalAmount, 0)
+      });
+    }
+
+    // Inventory summary
+    const Inventory = (await import('../models/Inventory.js')).default;
+    const inventoryShopId = baseQuery.shop;
+    const inventoryStats = await Inventory.aggregate([
+      ...(inventoryShopId ? [{ $match: { shop: new (await import('mongoose')).Types.ObjectId(inventoryShopId) } }] : []),
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'product',
+          foreignField: '_id',
+          as: 'productDetails'
+        }
+      },
+      { $unwind: '$productDetails' },
+      {
+        $group: {
+          _id: null,
+          totalProducts: { $sum: 1 },
+          totalQuantity: { $sum: '$quantity' },
+          totalValue: {
+            $sum: {
+              $multiply: ['$quantity', '$productDetails.price']
+            }
+          },
+          lowStockItems: {
+            $sum: {
+              $cond: [
+                { $lt: ['$quantity', '$minStockLevel'] },
+                1,
+                0
+              ]
+            }
+          },
+          outOfStockItems: {
+            $sum: {
+              $cond: [
+                { $eq: ['$quantity', 0] },
+                1,
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    const inventoryData = inventoryStats[0] || {
+      totalProducts: 0,
+      totalQuantity: 0,
+      totalValue: 0,
+      lowStockItems: 0,
+      outOfStockItems: 0
+    };
+
+    // Order status distribution
+    const orderStatuses = await SalesOrder.aggregate([
+      {
+        $match: {
+          ...baseQuery,
+          orderDate: { $gte: thisMonth, $lte: endOfToday }
+        }
+      },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+          totalValue: { $sum: '$totalAmount' }
+        }
+      }
+    ]);
+
+    const response = {
+      today: {
+        sales: todaysSales,
+        revenue: todaysRevenue,
+        salesChange: Math.round(salesChange * 100) / 100,
+        revenueChange: Math.round(revenueChange * 100) / 100
+      },
+      thisMonth: {
+        sales: thisMonthsSales,
+        revenue: thisMonthsRevenue,
+        salesChange: Math.round(monthlySalesChange * 100) / 100,
+        revenueChange: Math.round(monthlyRevenueChange * 100) / 100
+      },
+      inventory: inventoryData,
+      topSalesPeople,
+      topProducts,
+      recentOrders,
+      salesTrend,
+      orderStatuses
+    };
+
+    res.status(200).json({
+      success: true,
+      message: 'Admin dashboard metrics retrieved successfully',
+      data: response
+    });
+
+  } catch (error) {
+    console.error('Error getting admin dashboard metrics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve admin dashboard metrics'
+    });
+  }
+};
