@@ -114,7 +114,7 @@ interface InventoryData {
   shop: {
     _id: string;
     name: string;
-    location: string;
+    address: string;
   };
   quantity: number;
   minStockLevel: number;
@@ -130,6 +130,15 @@ interface InventoryStatsData {
   outOfStockItems: number;
   totalValue: number;
   totalQuantity: number;
+}
+
+interface InventorySummaryData {
+  shopId: string;
+  shopName: string;
+  shopLocation: string;
+  totalItems: number;
+  totalValue: number;
+  lowStockCount: number;
 }
 
 class ApiClient {
@@ -343,6 +352,10 @@ class ApiClient {
       body: JSON.stringify({ quantity }),
     });
   }
+
+  async getInventorySummary(options?: RequestInit) {
+    return this.request<InventorySummaryData[]>('/inventory/summary', options);
+  }
 }
 
 // Export a default instance
@@ -356,6 +369,7 @@ export type {
   CreateProductData,
   InventoryData,
   InventoryStatsData,
+  InventorySummaryData,
   UserData,
   CreateUserData,
   UpdateUserData,

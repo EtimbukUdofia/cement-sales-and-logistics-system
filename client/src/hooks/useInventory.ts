@@ -1,37 +1,63 @@
 import { useState, useEffect, useCallback } from 'react';
-import { apiClient, type InventoryData, type InventoryStatsData } from '@/lib/api';
+import { apiClient, type InventoryData, type InventoryStatsData, type InventorySummaryData } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 
 export function useInventory() {
   const { user } = useAuthStore();
   const [inventory, setInventory] = useState<InventoryData[]>([]);
   const [stats, setStats] = useState<InventoryStatsData | null>(null);
+  const [inventorySummary, setInventorySummary] = useState<InventorySummaryData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchInventory = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
 
     try {
-      // Use getAllInventory for role-based filtering on the backend
-      // or getShopInventory if we have a specific shopId and want to be explicit
+      // Fetch inventory and stats data
       const [inventoryResponse, statsResponse] = await Promise.all([
         apiClient.getInventory(),
         apiClient.getInventoryStats()
       ]);
 
+      // Handle inventory response
       if (inventoryResponse.success && inventoryResponse.data) {
         setInventory(inventoryResponse.data);
+      } else {
+        setInventory([]);
       }
 
+      // Handle stats response  
       if (statsResponse.success && statsResponse.data) {
         setStats(statsResponse.data);
+      } else {
+        setStats(null);
+      }
+
+      // Only fetch inventory summary if user is admin
+      if (user?.role === 'admin') {
+        try {
+          const summaryResponse = await apiClient.getInventorySummary();
+
+          if (summaryResponse.success && summaryResponse.data) {
+            setInventorySummary(summaryResponse.data);
+          } else {
+            setInventorySummary([]);
+          }
+        } catch {
+          // Don't set this as a critical error since regular inventory might still work
+          setInventorySummary([]);
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch inventory');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch inventory';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -55,6 +81,7 @@ export function useInventory() {
   return {
     inventory,
     stats,
+    inventorySummary,
     isLoading,
     error,
     refetch: fetchInventory,
