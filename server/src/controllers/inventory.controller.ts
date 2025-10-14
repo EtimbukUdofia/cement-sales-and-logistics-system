@@ -58,7 +58,7 @@ export const getInventorySummary = async (_req: AuthRequest, res: Response): Pro
         $project: {
           shopId: '$_id',
           shopName: '$shopDetails.name',
-          shopLocation: '$shopDetails.location',
+          shopLocation: '$shopDetails.address',
           totalItems: 1,
           totalValue: 1,
           lowStockCount: 1,
@@ -67,7 +67,7 @@ export const getInventorySummary = async (_req: AuthRequest, res: Response): Pro
       // Sort by shop name
       { $sort: { shopName: 1 } }
     ]);
-    res.status(200).json({ success: true, inventorySummary });
+    res.status(200).json({ success: true, data: inventorySummary });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error fetching inventory summary' });
   }
@@ -103,7 +103,7 @@ export const getInventoryByShop = async (req: AuthRequest, res: Response): Promi
 
     const inventoryItems = await Inventory.find({ shop: shopId })
       .populate('product', 'name variant brand size price imageUrl')
-      .populate('shop', 'name location')
+      .populate('shop', 'name address')
       .sort({ 'product.name': 1 })
       .lean();
 
@@ -133,7 +133,7 @@ export const getInventoryByProduct = async (req: AuthRequest, res: Response): Pr
       return;
     }
     const inventoryItems = await Inventory.find({ product: productId })
-      .populate('shop', 'name address location')
+      .populate('shop', 'name address')
       .lean()
       .exec();
     res.status(200).json({ success: true, inventoryItems });
@@ -245,7 +245,7 @@ export const getLowStockProducts = async (_req: AuthRequest, res: Response): Pro
           },
           shop: {
             name: '$shopDetails.name',
-            location: '$shopDetails.location',
+            location: '$shopDetails.address',
           },
         },
       },
@@ -275,7 +275,7 @@ export const getAllInventory = async (req: AuthRequest, res: Response): Promise<
 
     const inventory = await Inventory.find(query)
       .populate('product', 'name variant brand size price imageUrl')
-      .populate('shop', 'name location')
+      .populate('shop', 'name address')
       .sort({ 'shop.name': 1, 'product.name': 1 })
       .lean();
 
@@ -408,7 +408,7 @@ export const updateInventoryStock = async (req: AuthRequest, res: Response): Pro
 
     const updatedItem = await Inventory.findById(inventoryId)
       .populate('product', 'name variant brand size price imageUrl')
-      .populate('shop', 'name location')
+      .populate('shop', 'name address')
       .lean();
 
     res.status(200).json({
