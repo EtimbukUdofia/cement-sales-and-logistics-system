@@ -139,7 +139,7 @@ export function ShopFormDialog({ open, onClose, shop, onSuccess }: ShopFormDialo
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px]" aria-description="Shop Form">
         <DialogHeader>
           <DialogTitle>
             {shop ? "Edit Shop" : "Add New Shop"}
