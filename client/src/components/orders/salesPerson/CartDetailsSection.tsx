@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Minus, Plus, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useCartStore, type CartItem } from "@/store/cartStore"
@@ -14,21 +15,74 @@ export function CartDetailsSection({ onCheckoutSuccess }: { onCheckoutSuccess?: 
   const getTotalItems = useCartStore(state => state.getTotalItems);
   const getTotalPrice = useCartStore(state => state.getTotalPrice);
   const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
+  const [inputValues, setInputValues] = useState<Record<string, string>>({});
 
   const handleIncreaseQuantity = (item: CartItem) => {
     if (item.quantity < item.availableStock) {
-      updateQuantity(item.id, item.quantity + 1);
+      const newQuantity = item.quantity + 1;
+      updateQuantity(item.id, newQuantity);
+      setInputValues(prev => ({ ...prev, [item.id]: newQuantity.toString() }));
     } else {
       toast.error("Cannot add more items. Stock limit reached.");
     }
   };
 
   const handleDecreaseQuantity = (item: CartItem) => {
-    updateQuantity(item.id, item.quantity - 1);
+    const newQuantity = item.quantity - 1;
+    updateQuantity(item.id, newQuantity);
+    setInputValues(prev => ({ ...prev, [item.id]: newQuantity.toString() }));
+  };
+
+  const handleQuantityInputChange = (item: CartItem, value: string) => {
+    // Allow empty string or valid numbers (including numbers with leading zeros)
+    if (value === '' || /^\d*$/.test(value)) {
+      setInputValues(prev => ({ ...prev, [item.id]: value }));
+
+      // If it's a valid number, update the cart
+      if (value !== '' && /^\d+$/.test(value)) {
+        const numValue = parseInt(value, 10);
+        if (numValue > 0) {
+          if (numValue <= item.availableStock) {
+            updateQuantity(item.id, numValue);
+          } else {
+            // If exceeds stock, set to max available stock
+            updateQuantity(item.id, item.availableStock);
+            setInputValues(prev => ({ ...prev, [item.id]: item.availableStock.toString() }));
+            toast.error(`Only ${item.availableStock} items available in stock. Quantity adjusted to maximum available.`);
+          }
+        }
+      }
+    }
+  };
+
+  const handleQuantityInputBlur = (item: CartItem) => {
+    const inputValue = inputValues[item.id];
+    if (!inputValue || inputValue === '' || parseInt(inputValue, 10) < 1) {
+      // Reset to current quantity if input is invalid
+      setInputValues(prev => ({ ...prev, [item.id]: item.quantity.toString() }));
+    } else {
+      // Ensure the final value matches the cart quantity (handles any edge cases)
+      const numValue = parseInt(inputValue, 10);
+      const finalQuantity = Math.min(Math.max(numValue, 1), item.availableStock);
+      if (finalQuantity !== numValue) {
+        setInputValues(prev => ({ ...prev, [item.id]: finalQuantity.toString() }));
+        updateQuantity(item.id, finalQuantity);
+      }
+    }
+  };
+
+  const getInputValue = (item: CartItem): string => {
+    return inputValues[item.id] !== undefined ? inputValues[item.id] : item.quantity.toString();
   };
 
   const handleRemoveItem = (item: CartItem) => {
     removeItem(item.id);
+    // Clean up input values for removed item
+    setInputValues(prev => {
+      const newValues = { ...prev };
+      delete newValues[item.id];
+      return newValues;
+    });
     toast.success(`${item.name} removed from cart`);
   };
 
@@ -98,7 +152,7 @@ export function CartDetailsSection({ onCheckoutSuccess }: { onCheckoutSuccess?: 
               </Button>
             </div>
 
-            <div className="flex items-center justify-center gap-3 bg-muted rounded-lg p-2">
+            <div className="flex items-center justify-center gap-2 bg-muted rounded-lg p-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -108,7 +162,26 @@ export function CartDetailsSection({ onCheckoutSuccess }: { onCheckoutSuccess?: 
               >
                 <Minus size={14} />
               </Button>
-              <span className="font-medium min-w-[20px] text-center">{item.quantity}</span>
+              <Input
+                type="text"
+                value={getInputValue(item)}
+                onChange={(e) => handleQuantityInputChange(item, e.target.value)}
+                onBlur={() => handleQuantityInputBlur(item)}
+                onKeyDown={(e) => {
+                  // Handle Enter key to blur the input
+                  if (e.key === 'Enter') {
+                    e.currentTarget.blur();
+                  }
+                  // Prevent + and - keys if someone tries to use them
+                  if (e.key === '+' || e.key === '-' || e.key === 'e' || e.key === 'E') {
+                    e.preventDefault();
+                  }
+                }}
+                className="w-16 h-8 text-center border-0 bg-transparent font-medium p-1 focus-visible:ring-1 focus-visible:ring-primary"
+                min="1"
+                max={item.availableStock.toString()}
+                placeholder="Qty"
+              />
               <Button
                 variant="ghost"
                 size="sm"
@@ -118,6 +191,9 @@ export function CartDetailsSection({ onCheckoutSuccess }: { onCheckoutSuccess?: 
               >
                 <Plus size={14} />
               </Button>
+            </div>
+            <div className="text-xs text-muted-foreground text-center">
+              Max: {item.availableStock} bags
             </div>
           </div>
         ))}
