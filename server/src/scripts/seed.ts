@@ -7,6 +7,8 @@ import Inventory from '../models/Inventory.js';
 import User from '../models/User.js';
 import Customer from '../models/Customer.js';
 import SalesOrder from '../models/SalesOrder.js';
+import Supplier from '../models/Supplier.js';
+import PurchaseOrder from '../models/PurchaseOrder.js';
 
 dotenv.config();
 
@@ -31,6 +33,8 @@ const seedData = async () => {
     await User.deleteMany({});
     await Customer.deleteMany({});
     await SalesOrder.deleteMany({});
+    await Supplier.deleteMany({});
+    await PurchaseOrder.deleteMany({});
 
     console.log('Existing data cleared');
 
@@ -300,6 +304,81 @@ const seedData = async () => {
 
     const createdSalesOrders = await SalesOrder.insertMany(salesOrders);
     console.log(`${createdSalesOrders.length} sales orders created`);
+
+    // Create sample suppliers
+    const suppliers = await Supplier.insertMany([
+      {
+        name: 'Dangote Cement Plc',
+        address: 'No. 1 Dangote Street, Ikoyi, Lagos State',
+        contactPerson: 'Ademola Johnson',
+        phone: '+234-802-123-4567',
+        email: 'procurement@dangote.com.ng',
+        products: [products[0]!._id, products[1]!._id], // Dangote 3X and Falcon
+        isActive: true
+      },
+      {
+        name: 'BUA Cement Plc',
+        address: 'BUA House, Plot 962/963, Herbert Macaulay Way, Central Business District, Abuja',
+        contactPerson: 'Fatima Abdullahi',
+        phone: '+234-803-234-5678',
+        email: 'sales@buacement.com',
+        products: [products[2]!._id], // BUA XL
+        isActive: true
+      },
+      {
+        name: 'Lafarge Africa Plc',
+        address: 'Plot 3A & B Block A10, Admiralty Way, Lekki Phase 1, Lagos',
+        contactPerson: 'Emeka Okafor',
+        phone: '+234-804-345-6789',
+        email: 'procurement@lafarge.com.ng',
+        products: [products[3]!._id, products[4]!._id], // Elephant and Supafix
+        isActive: true
+      },
+      {
+        name: 'Ashaka Cement Plc',
+        address: 'Ashaka, Funakaye LGA, Gombe State',
+        contactPerson: 'Ibrahim Mohammed',
+        phone: '+234-805-456-7890',
+        email: 'sales@ashakacem.com',
+        products: [],
+        isActive: true
+      }
+    ]);
+
+    console.log(`${suppliers.length} suppliers created`);
+
+    // Create sample purchase orders
+    const adminUser = users.find(u => u.role === 'admin');
+    const purchaseOrders = [];
+
+    for (let i = 0; i < 8; i++) {
+      const randomSupplier = suppliers[Math.floor(Math.random() * suppliers.length)]!;
+      const randomProduct = products[Math.floor(Math.random() * products.length)]!;
+      const quantity = Math.floor(Math.random() * 100) + 10; // 10-109 bags
+      const unitPrice = randomProduct.price + Math.floor(Math.random() * 500); // Add some variation to price
+
+      const statuses = ['Pending', 'Approved', 'Delivered', 'Cancelled'] as const;
+      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)]!;
+
+      const orderDate = new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000)); // Random date in last 30 days
+
+      purchaseOrders.push({
+        orderNumber: `PO-${Date.now()}-${i}`,
+        product: randomProduct._id,
+        supplier: randomSupplier._id,
+        quantity,
+        unitPrice,
+        totalPrice: quantity * unitPrice,
+        orderDate,
+        expectedDeliveryDate: new Date(orderDate.getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days later
+        status: randomStatus,
+        createdBy: adminUser!._id,
+        notes: `Sample purchase order for ${randomProduct.brand} ${randomProduct.name}`
+      });
+    }
+
+    const createdPurchaseOrders = await PurchaseOrder.insertMany(purchaseOrders);
+    console.log(`${createdPurchaseOrders.length} purchase orders created`);
 
     console.log('\nSeed data created successfully!');
     console.log('\nSample Login Credentials:');
