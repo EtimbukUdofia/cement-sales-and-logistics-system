@@ -141,6 +141,106 @@ interface InventorySummaryData {
   lowStockCount: number;
 }
 
+interface SupplierData {
+  _id: string;
+  name: string;
+  address?: string;
+  contactPerson?: string;
+  phone: string;
+  email?: string;
+  products: Array<{
+    _id: string;
+    name: string;
+    brand: string;
+    variant?: string;
+  }>;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CreateSupplierData {
+  name: string;
+  address?: string;
+  contactPerson?: string;
+  phone: string;
+  email?: string;
+  products?: string[];
+  isActive?: boolean;
+}
+
+interface UpdateSupplierData {
+  name?: string;
+  address?: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  products?: string[];
+  isActive?: boolean;
+}
+
+interface PurchaseOrderData {
+  _id: string;
+  orderNumber: string;
+  product: {
+    _id: string;
+    name: string;
+    brand: string;
+    variant?: string;
+  };
+  supplier: {
+    _id: string;
+    name: string;
+    phone: string;
+  };
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  orderDate: string;
+  expectedDeliveryDate?: string;
+  receivedDate?: string;
+  status: 'Pending' | 'Approved' | 'Delivered' | 'Cancelled';
+  notes?: string;
+  createdBy: {
+    _id: string;
+    username: string;
+    email: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CreatePurchaseOrderData {
+  orderNumber: string;
+  product: string;
+  supplier: string;
+  quantity: number;
+  unitPrice: number;
+  expectedDeliveryDate?: string;
+  notes?: string;
+}
+
+interface UpdatePurchaseOrderData {
+  orderNumber?: string;
+  product?: string;
+  supplier?: string;
+  quantity?: number;
+  unitPrice?: number;
+  expectedDeliveryDate?: string;
+  status?: 'Pending' | 'Approved' | 'Delivered' | 'Cancelled';
+  receivedDate?: string;
+  notes?: string;
+}
+
+interface PurchaseOrderStatsData {
+  totalOrders: number;
+  pendingOrders: number;
+  approvedOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  totalValue: number;
+}
+
 class ApiClient {
   private baseURL: string;
 
@@ -356,6 +456,101 @@ class ApiClient {
   async getInventorySummary(options?: RequestInit) {
     return this.request<InventorySummaryData[]>('/inventory/summary', options);
   }
+
+  // Supplier API methods
+  async getSuppliers(params?: { search?: string; isActive?: boolean }, options?: RequestInit) {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.isActive !== undefined) query.append('isActive', params.isActive.toString());
+
+    const queryString = query.toString();
+    return this.request<SupplierData[]>(`/suppliers${queryString ? `?${queryString}` : ''}`, options);
+  }
+
+  async getSupplierById(id: string, options?: RequestInit) {
+    return this.request<SupplierData>(`/suppliers/${id}`, options);
+  }
+
+  async createSupplier(data: CreateSupplierData, options?: RequestInit) {
+    return this.request<SupplierData>('/suppliers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      ...options,
+    });
+  }
+
+  async updateSupplier(id: string, data: UpdateSupplierData, options?: RequestInit) {
+    return this.request<SupplierData>(`/suppliers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      ...options,
+    });
+  }
+
+  async deleteSupplier(id: string, options?: RequestInit) {
+    return this.request(`/suppliers/${id}`, {
+      method: 'DELETE',
+      ...options,
+    });
+  }
+
+  // Purchase Order API methods
+  async getPurchaseOrders(params?: {
+    status?: string;
+    supplier?: string;
+    product?: string;
+    page?: number;
+    limit?: number;
+  }, options?: RequestInit) {
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.supplier) query.append('supplier', params.supplier);
+    if (params?.product) query.append('product', params.product);
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+
+    const queryString = query.toString();
+    return this.request<{
+      data: PurchaseOrderData[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+      };
+    }>(`/purchase-orders${queryString ? `?${queryString}` : ''}`, options);
+  }
+
+  async getPurchaseOrderById(id: string, options?: RequestInit) {
+    return this.request<PurchaseOrderData>(`/purchase-orders/${id}`, options);
+  }
+
+  async createPurchaseOrder(data: CreatePurchaseOrderData, options?: RequestInit) {
+    return this.request<PurchaseOrderData>('/purchase-orders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      ...options,
+    });
+  }
+
+  async updatePurchaseOrder(id: string, data: UpdatePurchaseOrderData, options?: RequestInit) {
+    return this.request<PurchaseOrderData>(`/purchase-orders/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      ...options,
+    });
+  }
+
+  async deletePurchaseOrder(id: string, options?: RequestInit) {
+    return this.request(`/purchase-orders/${id}`, {
+      method: 'DELETE',
+      ...options,
+    });
+  }
+
+  async getPurchaseOrderStats(options?: RequestInit) {
+    return this.request<PurchaseOrderStatsData>('/purchase-orders/stats', options);
+  }
 }
 
 // Export a default instance
@@ -374,5 +569,12 @@ export type {
   CreateUserData,
   UpdateUserData,
   ShopData,
-  CreateShopData
+  CreateShopData,
+  SupplierData,
+  CreateSupplierData,
+  UpdateSupplierData,
+  PurchaseOrderData,
+  CreatePurchaseOrderData,
+  UpdatePurchaseOrderData,
+  PurchaseOrderStatsData
 };
