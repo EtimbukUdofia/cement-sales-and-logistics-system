@@ -1,10 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Phone, Truck } from "lucide-react";
-import type { Supplier } from "@/data/suppliers";
+import type { SupplierData } from "@/lib/api";
 
 interface SupplierCardProps {
-  supplier: Supplier;
+  supplier: SupplierData;
 }
 
 export function SupplierCard({ supplier }: SupplierCardProps) {
@@ -18,9 +18,12 @@ export function SupplierCard({ supplier }: SupplierCardProps) {
           </div>
           <Badge
             variant="secondary"
-            className="bg-green-50 text-green-700 border-green-200 font-medium"
+            className={`font-medium ${supplier.isActive
+                ? "bg-green-50 text-green-700 border-green-200"
+                : "bg-red-50 text-red-700 border-red-200"
+              }`}
           >
-            {supplier.status}
+            {supplier.isActive ? "Available" : "Inactive"}
           </Badge>
         </div>
 
@@ -30,10 +33,19 @@ export function SupplierCard({ supplier }: SupplierCardProps) {
         </h3>
 
         {/* Location */}
-        <div className="flex items-center gap-2 mb-3">
-          <MapPin className="w-4 h-4 text-gray-500" />
-          <span className="text-sm text-gray-600">{supplier.location}</span>
-        </div>
+        {supplier.address && (
+          <div className="flex items-center gap-2 mb-3">
+            <MapPin className="w-4 h-4 text-gray-500" />
+            <span className="text-sm text-gray-600">{supplier.address}</span>
+          </div>
+        )}
+
+        {/* Contact Person */}
+        {supplier.contactPerson && (
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm text-gray-600">Contact: {supplier.contactPerson}</span>
+          </div>
+        )}
 
         {/* Phone */}
         <div className="flex items-center gap-2 mb-4">
@@ -41,20 +53,35 @@ export function SupplierCard({ supplier }: SupplierCardProps) {
           <span className="text-sm text-gray-600">{supplier.phone}</span>
         </div>
 
-        {/* Inventory and Products */}
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Total Inventory:</span>
-            <span className="text-sm font-medium text-gray-900">
-              {supplier.totalInventory} {supplier.inventoryUnit}
-            </span>
+        {/* Email */}
+        {supplier.email && (
+          <div className="mb-4">
+            <span className="text-sm text-gray-600">{supplier.email}</span>
           </div>
+        )}
+
+        {/* Products */}
+        <div className="space-y-2">
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600">Products:</span>
             <span className="text-sm font-medium text-gray-900">
-              {supplier.products}
+              {supplier.products.length}
             </span>
           </div>
+          {supplier.products.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {supplier.products.slice(0, 2).map((product) => (
+                <Badge key={product._id} variant="outline" className="text-xs">
+                  {product.brand}
+                </Badge>
+              ))}
+              {supplier.products.length > 2 && (
+                <Badge variant="outline" className="text-xs">
+                  +{supplier.products.length - 2} more
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

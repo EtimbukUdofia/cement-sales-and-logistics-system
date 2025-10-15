@@ -8,16 +8,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { PurchaseOrder } from "@/data/suppliers";
+import type { PurchaseOrderData } from "@/lib/api";
 
 interface PurchaseOrdersTableProps {
-  orders: PurchaseOrder[];
+  orders: PurchaseOrderData[];
 }
 
 export function PurchaseOrdersTable({ orders }: PurchaseOrdersTableProps) {
-  const getStatusBadge = (status: PurchaseOrder['status']) => {
+  const getStatusBadge = (status: PurchaseOrderData['status']) => {
     const variants = {
-      Completed: "bg-green-50 text-green-700 border-green-200",
+      Delivered: "bg-green-50 text-green-700 border-green-200",
+      Approved: "bg-blue-50 text-blue-700 border-blue-200",
       Pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
       Cancelled: "bg-red-50 text-red-700 border-red-200"
     };
@@ -44,7 +45,7 @@ export function PurchaseOrdersTable({ orders }: PurchaseOrdersTableProps) {
           <TableHeader>
             <TableRow className="bg-gray-50 border-b border-gray-200">
               <TableHead className="text-sm font-medium text-gray-700 px-6 py-3">
-                Transaction ID
+                Order Number
               </TableHead>
               <TableHead className="text-sm font-medium text-gray-700 px-6 py-3">
                 Supplier
@@ -56,45 +57,46 @@ export function PurchaseOrdersTable({ orders }: PurchaseOrdersTableProps) {
                 Quantity
               </TableHead>
               <TableHead className="text-sm font-medium text-gray-700 px-6 py-3">
-                Price per bag
+                Unit Price
               </TableHead>
               <TableHead className="text-sm font-medium text-gray-700 px-6 py-3">
-                Total
+                Total Price
               </TableHead>
               <TableHead className="text-sm font-medium text-gray-700 px-6 py-3">
                 Status
               </TableHead>
               <TableHead className="text-sm font-medium text-gray-700 px-6 py-3">
-                Date
+                Order Date
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orders.map((order, index) => (
-              <TableRow key={`${order.transactionId}-${index}`} className="border-b border-gray-100">
+              <TableRow key={`${order.orderNumber}-${index}`} className="border-b border-gray-100">
                 <TableCell className="text-sm text-gray-900 px-6 py-4 font-medium">
-                  {order.transactionId}
+                  {order.orderNumber}
                 </TableCell>
                 <TableCell className="text-sm text-gray-900 px-6 py-4">
-                  {order.supplier}
+                  {order.supplier.name}
                 </TableCell>
                 <TableCell className="text-sm text-gray-900 px-6 py-4">
-                  {order.product}
+                  {order.product.brand} {order.product.name}
+                  {order.product.variant && ` - ${order.product.variant}`}
                 </TableCell>
                 <TableCell className="text-sm text-gray-900 px-6 py-4">
-                  {order.quantity}
+                  {order.quantity} bags
                 </TableCell>
                 <TableCell className="text-sm text-gray-900 px-6 py-4">
-                  {order.pricePerBag}
+                  ₦{order.unitPrice.toLocaleString()}
                 </TableCell>
                 <TableCell className="text-sm text-gray-900 px-6 py-4 font-medium">
-                  {order.total}
+                  ₦{order.totalPrice.toLocaleString()}
                 </TableCell>
                 <TableCell className="text-sm text-gray-900 px-6 py-4">
                   {getStatusBadge(order.status)}
                 </TableCell>
                 <TableCell className="text-sm text-gray-900 px-6 py-4">
-                  {order.date}
+                  {new Date(order.orderDate).toLocaleDateString()}
                 </TableCell>
               </TableRow>
             ))}
