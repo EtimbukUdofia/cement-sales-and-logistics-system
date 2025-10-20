@@ -73,7 +73,7 @@ export function InventorySummaryTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {inventory.map((item) => {
+              {inventory.sort((a,b) => a.shop.name.localeCompare(b.shop.name)).map((item) => {
                 const status = getStatus(item.quantity, item.minStockLevel)
                 return (
                   <TableRow key={item._id}>
