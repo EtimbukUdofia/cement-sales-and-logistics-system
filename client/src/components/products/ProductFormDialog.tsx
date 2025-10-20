@@ -200,7 +200,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       if (!open) resetForm();
       onOpenChange(open);
     }}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent aria-describedby="" aria-description="Product form" className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {product ? "Edit Product" : "Add New Product"}
