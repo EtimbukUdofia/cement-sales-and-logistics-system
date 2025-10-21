@@ -4,6 +4,7 @@ import type { AuthRequest } from '../interfaces/interface.js';
 import Inventory from '../models/Inventory.js';
 import Product from '../models/Product.js';
 import Shop from '../models/Shop.js';
+import InventoryHistory from '../models/InventoryHistory.js';
 
 // get inventory summary for all shops
 export const getInventorySummary = async (_req: AuthRequest, res: Response): Promise<void> => {
@@ -418,5 +419,228 @@ export const updateInventoryStock = async (req: AuthRequest, res: Response): Pro
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error updating inventory' });
+  }
+};
+
+// Admin: Get shop details for inventory management
+export const getShopDetailsForInventory = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { shopId } = req.params;
+
+  if (!shopId || !mongoose.Types.ObjectId.isValid(shopId)) {
+    res.status(400).json({ success: false, message: 'Valid shop ID is required' });
+    return;
+  }
+
+  try {
+    const shop = await Shop.findById(shopId)
+      .populate('manager', 'username email')
+      .lean();
+
+    if (!shop) {
+      res.status(404).json({ success: false, message: 'Shop not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      shop
+    });
+  } catch (error) {
+    console.error('Error fetching shop details:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching shop details' });
+  }
+};
+
+// Admin: Get inventory for a specific shop with all products
+export const getShopInventoryForAdmin = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { shopId } = req.params;
+
+  if (!shopId || !mongoose.Types.ObjectId.isValid(shopId)) {
+    res.status(400).json({ success: false, message: 'Valid shop ID is required' });
+    return;
+  }
+
+  try {
+    // Verify shop exists
+    const shop = await Shop.findById(shopId).lean();
+    if (!shop) {
+      res.status(404).json({ success: false, message: 'Shop not found' });
+      return;
+    }
+
+    // Get all products and their inventory for this shop
+    const inventory = await Inventory.find({ shop: shopId })
+      .populate('product', 'name brand type unitPrice imageUrl')
+      .lean();
+
+    // If no inventory exists, create entries with 0 quantity for all products
+    if (inventory.length === 0) {
+      const allProducts = await Product.find({ isActive: true }).lean();
+      const inventoryPromises = allProducts.map(product =>
+        new Inventory({
+          product: product._id,
+          shop: shopId,
+          quantity: 0,
+          minStockLevel: 10,
+          maxStockLevel: 1000
+        }).save()
+      );
+
+      await Promise.all(inventoryPromises);
+
+      // Fetch the newly created inventory
+      const newInventory = await Inventory.find({ shop: shopId })
+        .populate('product', 'name brand type unitPrice imageUrl')
+        .lean();
+
+      res.status(200).json({
+        success: true,
+        inventory: newInventory
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      inventory
+    });
+  } catch (error) {
+    console.error('Error fetching shop inventory:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching inventory' });
+  }
+};
+
+// Admin: Update inventory quantity with history tracking
+export const updateShopInventory = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { shopId } = req.params;
+  const { productId, newQuantity, changeType, reason } = req.body;
+  const { user } = req;
+
+  if (!shopId || !mongoose.Types.ObjectId.isValid(shopId)) {
+    res.status(400).json({ success: false, message: 'Valid shop ID is required' });
+    return;
+  }
+
+  if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
+    res.status(400).json({ success: false, message: 'Valid product ID is required' });
+    return;
+  }
+
+  if (typeof newQuantity !== 'number' || newQuantity < 0) {
+    res.status(400).json({ success: false, message: 'New quantity must be a non-negative number' });
+    return;
+  }
+
+  if (!changeType || !['increase', 'decrease', 'restock', 'adjustment'].includes(changeType)) {
+    res.status(400).json({ success: false, message: 'Valid change type is required' });
+    return;
+  }
+
+  try {
+    // Find or create inventory item
+    let inventoryItem = await Inventory.findOne({
+      product: productId,
+      shop: shopId
+    });
+
+    const previousQuantity = inventoryItem ? inventoryItem.quantity : 0;
+    const changeAmount = newQuantity - previousQuantity;
+
+    if (!inventoryItem) {
+      // Create new inventory item
+      inventoryItem = new Inventory({
+        product: productId,
+        shop: shopId,
+        quantity: newQuantity,
+        minStockLevel: 10,
+        maxStockLevel: 1000,
+        lastRestocked: newQuantity > 0 ? new Date() : undefined
+      });
+    } else {
+      // Update existing item
+      inventoryItem.quantity = newQuantity;
+      if (newQuantity > previousQuantity) {
+        inventoryItem.lastRestocked = new Date();
+      }
+    }
+
+    await inventoryItem.save();
+
+    // Create history record
+    const historyRecord = new InventoryHistory({
+      inventory: inventoryItem._id,
+      product: productId,
+      shop: shopId,
+      previousQuantity,
+      newQuantity,
+      changeAmount,
+      changeType,
+      reason: reason || `Admin ${changeType}`,
+      updatedBy: user?.id
+    });
+
+    await historyRecord.save();
+
+    // Return updated inventory with product details
+    const updatedInventory = await Inventory.findById(inventoryItem._id)
+      .populate('product', 'name brand type unitPrice imageUrl')
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      message: 'Inventory updated successfully',
+      inventory: updatedInventory
+    });
+  } catch (error) {
+    console.error('Error updating inventory:', error);
+    res.status(500).json({ success: false, message: 'Server error updating inventory' });
+  }
+};
+
+// Admin: Get inventory update history for a shop
+export const getShopInventoryHistory = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { shopId } = req.params;
+  const { page = 1, limit = 50 } = req.query;
+
+  if (!shopId || !mongoose.Types.ObjectId.isValid(shopId)) {
+    res.status(400).json({ success: false, message: 'Valid shop ID is required' });
+    return;
+  }
+
+  try {
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = parseInt(limit as string) || 50;
+    const skip = (pageNum - 1) * limitNum;
+
+    // Verify shop exists
+    const shop = await Shop.findById(shopId).lean();
+    if (!shop) {
+      res.status(404).json({ success: false, message: 'Shop not found' });
+      return;
+    }
+
+    const history = await InventoryHistory.find({ shop: shopId })
+      .populate('product', 'name brand type')
+      .populate('updatedBy', 'username')
+      .sort({ createdAt: -1 })
+      .limit(limitNum)
+      .skip(skip)
+      .lean();
+
+    const totalRecords = await InventoryHistory.countDocuments({ shop: shopId });
+
+    res.status(200).json({
+      success: true,
+      history,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalRecords / limitNum),
+        totalRecords,
+        limit: limitNum
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching inventory history:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching inventory history' });
   }
 };
