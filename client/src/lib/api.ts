@@ -457,6 +457,48 @@ class ApiClient {
     return this.request<InventorySummaryData[]>('/inventory/summary', options);
   }
 
+  // Admin Shop Inventory Management API methods
+  async getShopDetailsForInventory(shopId: string, options?: RequestInit) {
+    return this.request(`/inventory/admin/shops/${shopId}`, options);
+  }
+
+  async getShopInventoryForAdmin(shopId: string, options?: RequestInit) {
+    return this.request(`/inventory/admin/shops/${shopId}/inventory`, options);
+  }
+
+  async updateShopInventory(
+    shopId: string, 
+    updateData: {
+      productId: string;
+      newQuantity: number;
+      changeType: 'increase' | 'decrease' | 'restock' | 'adjustment';
+      reason?: string;
+    }, 
+    options?: RequestInit
+  ) {
+    return this.request(`/inventory/admin/shops/${shopId}/inventory/update`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+      ...options,
+    });
+  }
+
+  async getShopInventoryHistory(
+    shopId: string, 
+    params?: { page?: number; limit?: number }, 
+    options?: RequestInit
+  ) {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    
+    const queryString = query.toString();
+    return this.request(
+      `/inventory/admin/shops/${shopId}/inventory/history${queryString ? `?${queryString}` : ''}`, 
+      options
+    );
+  }
+
   // Supplier API methods
   async getSuppliers(params?: { search?: string; isActive?: boolean }, options?: RequestInit) {
     const query = new URLSearchParams();
