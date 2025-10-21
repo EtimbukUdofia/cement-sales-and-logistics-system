@@ -273,6 +273,14 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
+        // Don't log 404 errors for certain endpoints in development to avoid console spam
+        const is404 = response.status === 404;
+        const isShopEndpoint = endpoint.includes('/shops/');
+
+        if (!(is404 && isShopEndpoint)) {
+          console.error(`API Error ${response.status}:`, data.message || `HTTP error! status: ${response.status}`);
+        }
+
         throw new Error(data.message || `HTTP error! status: ${response.status}`);
       }
 
@@ -434,12 +442,32 @@ class ApiClient {
 
   // Inventory API methods
   async getInventory(options?: RequestInit) {
-    return this.request<InventoryData[]>('/inventory', options);
+    // Add cache-busting headers to ensure fresh data
+    const requestOptions: RequestInit = {
+      ...options,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        ...options?.headers,
+      },
+    };
+    return this.request<InventoryData[]>('/inventory', requestOptions);
   }
 
   async getInventoryStats(shopId?: string, options?: RequestInit) {
     const endpoint = shopId ? `/inventory/stats?shop=${shopId}` : '/inventory/stats';
-    return this.request<InventoryStatsData>(endpoint, options);
+    // Add cache-busting headers to ensure fresh data
+    const requestOptions: RequestInit = {
+      ...options,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        ...options?.headers,
+      },
+    };
+    return this.request<InventoryStatsData>(endpoint, requestOptions);
   }
 
   async getShopInventory(shopId: string, options?: RequestInit) {
@@ -454,7 +482,17 @@ class ApiClient {
   }
 
   async getInventorySummary(options?: RequestInit) {
-    return this.request<InventorySummaryData[]>('/inventory/summary', options);
+    // Add cache-busting headers to ensure fresh data
+    const requestOptions: RequestInit = {
+      ...options,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        ...options?.headers,
+      },
+    };
+    return this.request<InventorySummaryData[]>('/inventory/summary', requestOptions);
   }
 
   // Admin Shop Inventory Management API methods

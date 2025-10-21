@@ -14,29 +14,26 @@ export function useUserManagement() {
     try {
       const response = await apiClient.getUsers();
       if (response.success && response.users) {
-        // Populate shop information for users
-        const usersWithShops = await Promise.all(
-          response.users.map(async (user) => {
-            if (user.shopId) {
-              try {
-                const shopResponse = await apiClient.getShopById(user.shopId);
-                if (shopResponse.success && shopResponse.shop) {
-                  return {
-                    ...user,
-                    shop: {
-                      _id: shopResponse.shop._id,
-                      name: shopResponse.shop.name,
-                      address: shopResponse.shop.address
-                    }
-                  } as UserData;
-                }
-              } catch {
-                // Error fetching shop details, skip
+        // First, get all existing shops to avoid 404 errors
+        const shopsResponse = await apiClient.getShops();
+        const existingShops = shopsResponse.success ? shopsResponse.shops : [];
+        const shopMap = new Map(existingShops.map(shop => [shop._id, shop]));
+
+        // Populate shop information for users only if the shop exists
+        const usersWithShops = response.users.map((user) => {
+          if (user.shopId && shopMap.has(user.shopId)) {
+            const shop = shopMap.get(user.shopId)!;
+            return {
+              ...user,
+              shop: {
+                _id: shop._id,
+                name: shop.name,
+                address: shop.address
               }
-            }
-            return user;
-          })
-        );
+            } as UserData;
+          }
+          return user;
+        });
         setUsers(usersWithShops);
       } else {
         toast.error('Failed to fetch users');
