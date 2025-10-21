@@ -499,6 +499,14 @@ class ApiClient {
     );
   }
 
+  // Sync inventory system (admin only)
+  async syncInventory(options?: RequestInit) {
+    return this.request('/inventory/sync', {
+      method: 'POST',
+      ...options,
+    });
+  }
+
   // Supplier API methods
   async getSuppliers(params?: { search?: string; isActive?: boolean }, options?: RequestInit) {
     const query = new URLSearchParams();

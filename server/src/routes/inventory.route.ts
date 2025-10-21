@@ -12,7 +12,8 @@ import {
   getShopDetailsForInventory,
   getShopInventoryForAdmin,
   updateShopInventory,
-  getShopInventoryHistory
+  getShopInventoryHistory,
+  syncInventory
 } from "../controllers/inventory.controller.js";
 import isAdmin from "../middlewares/isAdmin.js";
 import { verifyToken } from "../middlewares/verifyToken.js";
@@ -47,6 +48,9 @@ router.post('/restock', restockInventory);
 
 // Adjust inventory levels manually (admin only)
 router.post('/adjust', isAdmin, adjustInventoryLevel);
+
+// Sync inventory system (admin only) - ensures all shops have entries for all products
+router.post('/sync', isAdmin, syncInventory);
 
 // Admin shop inventory management routes
 router.get('/admin/shops/:shopId', isAdmin, getShopDetailsForInventory);

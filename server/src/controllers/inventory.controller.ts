@@ -5,10 +5,15 @@ import Inventory from '../models/Inventory.js';
 import Product from '../models/Product.js';
 import Shop from '../models/Shop.js';
 import InventoryHistory from '../models/InventoryHistory.js';
+import { syncInventorySystem } from '../utils/inventoryUtils.js';
 
-// get inventory summary for all shops
+// get inventory summary for all shops (includes shops with no inventory)
 export const getInventorySummary = async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
+    // Get all active shops first
+    const allShops = await Shop.find({ isActive: true }, '_id name address').lean();
+
+    // Get inventory summary for shops that have inventory
     const inventorySummary = await Inventory.aggregate([
       // First, lookup product details to get price
       {
@@ -64,11 +69,31 @@ export const getInventorySummary = async (_req: AuthRequest, res: Response): Pro
           totalValue: 1,
           lowStockCount: 1,
         },
-      },
-      // Sort by shop name
-      { $sort: { shopName: 1 } }
+      }
     ]);
-    res.status(200).json({ success: true, data: inventorySummary });
+
+    // Create a map of shops with inventory data
+    const shopInventoryMap = new Map(
+      inventorySummary.map(item => [item.shopId.toString(), item])
+    );
+
+    // Include all shops, even those without inventory
+    const completeInventorySummary = allShops.map(shop => {
+      const existingData = shopInventoryMap.get(shop._id.toString());
+      return existingData || {
+        shopId: shop._id,
+        shopName: shop.name,
+        shopLocation: shop.address,
+        totalItems: 0,
+        totalValue: 0,
+        lowStockCount: 0,
+      };
+    });
+
+    // Sort by shop name
+    completeInventorySummary.sort((a, b) => a.shopName.localeCompare(b.shopName));
+
+    res.status(200).json({ success: true, data: completeInventorySummary });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error fetching inventory summary' });
   }
@@ -451,6 +476,72 @@ export const getShopDetailsForInventory = async (req: AuthRequest, res: Response
   }
 };
 
+// Initialize inventory for a new shop (create entries for all active products)
+export const initializeShopInventory = async (shopId: string): Promise<void> => {
+  try {
+    // Check if shop already has inventory
+    const existingInventory = await Inventory.findOne({ shop: shopId });
+    if (existingInventory) {
+      return; // Shop already has inventory, no need to initialize
+    }
+
+    // Get all active products
+    const activeProducts = await Product.find({ isActive: true }).lean();
+
+    if (activeProducts.length === 0) {
+      return; // No products to initialize
+    }
+
+    // Create inventory entries for all products with 0 quantity
+    const inventoryEntries = activeProducts.map(product => ({
+      product: product._id,
+      shop: shopId,
+      quantity: 0,
+      minStockLevel: 10, // Default minimum stock level
+      maxStockLevel: 1000, // Default maximum stock level
+    }));
+
+    await Inventory.insertMany(inventoryEntries);
+    console.log(`Initialized inventory for shop ${shopId} with ${activeProducts.length} products`);
+  } catch (error) {
+    console.error('Error initializing shop inventory:', error);
+    // Don't throw error, just log it as this is not critical for shop creation
+  }
+};
+
+// Initialize inventory for a new product (create entries for all active shops)
+export const initializeProductInventory = async (productId: string): Promise<void> => {
+  try {
+    // Check if product already has inventory entries
+    const existingInventory = await Inventory.findOne({ product: productId });
+    if (existingInventory) {
+      return; // Product already has inventory, no need to initialize
+    }
+
+    // Get all active shops
+    const activeShops = await Shop.find({ isActive: true }).lean();
+
+    if (activeShops.length === 0) {
+      return; // No shops to initialize
+    }
+
+    // Create inventory entries for all shops with 0 quantity
+    const inventoryEntries = activeShops.map(shop => ({
+      product: productId,
+      shop: shop._id,
+      quantity: 0,
+      minStockLevel: 10, // Default minimum stock level
+      maxStockLevel: 1000, // Default maximum stock level
+    }));
+
+    await Inventory.insertMany(inventoryEntries);
+    console.log(`Initialized inventory for product ${productId} across ${activeShops.length} shops`);
+  } catch (error) {
+    console.error('Error initializing product inventory:', error);
+    // Don't throw error, just log it as this is not critical for product creation
+  }
+};
+
 // Admin: Get inventory for a specific shop with all products
 export const getShopInventoryForAdmin = async (req: AuthRequest, res: Response): Promise<void> => {
   const { shopId } = req.params;
@@ -642,5 +733,24 @@ export const getShopInventoryHistory = async (req: AuthRequest, res: Response): 
   } catch (error) {
     console.error('Error fetching inventory history:', error);
     res.status(500).json({ success: false, message: 'Server error fetching inventory history' });
+  }
+};
+
+// Admin: Sync inventory system - ensures all shops have entries for all products
+export const syncInventory = async (_req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const result = await syncInventorySystem();
+
+    res.status(200).json({
+      success: true,
+      message: 'Inventory sync completed successfully',
+      data: result
+    });
+  } catch (error) {
+    console.error('Error syncing inventory:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error syncing inventory system'
+    });
   }
 };

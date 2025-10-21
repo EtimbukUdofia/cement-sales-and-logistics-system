@@ -10,7 +10,10 @@
     "start:prod": "NODE_ENV=production node dist/server.js",
     "dev": "nodemon --exec tsx src/server.ts",
     "seed": "tsx src/scripts/seed.ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "clearDB": "tsx src/scripts/clearDB.ts",
+    "init-inventory": "tsx src/scripts/clearDB.ts init-inventory",
+    "sync-inventory": "tsx src/scripts/syncInventory.ts"
   },
   "type": "module",
   "author": "",

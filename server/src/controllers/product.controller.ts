@@ -4,6 +4,7 @@ import type { AuthRequest } from '../interfaces/interface.js';
 import Product from '../models/Product.js';
 import { z } from 'zod';
 import { escapeRegExp } from '../utils.js';
+import { initializeProductInventory } from './inventory.controller.js';
 
 const createProductSchema = z.object({
   name: z.string().min(1, 'Name is required').transform((s) => s.trim()),
@@ -34,6 +35,9 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
 
     const newProduct = new Product({ name, brand, price, size });
     const result = await newProduct.save();
+
+    // Initialize inventory for the new product (create entries for all active shops)
+    await initializeProductInventory(result._id.toString());
 
     res.status(201).json({ success: true, message: 'Product created successfully', product: result });
   } catch (error) {

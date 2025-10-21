@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import type { AuthRequest } from '../interfaces/interface.js';
 import Shop from '../models/Shop.js';
 import User from '../models/User.js';
+import { initializeShopInventory } from './inventory.controller.js';
 
 // get all shops
 export const getAllShops = async (_req: AuthRequest, res: Response): Promise<void> => {
@@ -84,6 +85,10 @@ export const createShop = async (req: AuthRequest, res: Response): Promise<void>
     const newShop = new Shop(shopData);
     await newShop.save();
     await newShop.populate('manager', 'username email');
+
+    // Initialize inventory for the new shop (create entries for all active products)
+    await initializeShopInventory(newShop._id.toString());
+
     res.status(201).json({ success: true, shop: newShop });
   } catch (err) {
 

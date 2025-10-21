@@ -1,9 +1,12 @@
-import { Warehouse, Package } from "lucide-react"
+import { Warehouse, Package, ArrowRight } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { useInventory } from "@/hooks/useInventory"
+import { useNavigate } from "react-router"
 
 export function ShopInventoryCards() {
   const { inventorySummary, inventory, isLoading } = useInventory()
+  const navigate = useNavigate()
 
   if (isLoading) {
     return (
@@ -25,13 +28,17 @@ export function ShopInventoryCards() {
     return acc
   }, {} as Record<string, typeof inventory>)
 
+  const handleManageInventory = (shopId: string) => {
+    navigate(`/admin/shops/${shopId}/inventory`)
+  }
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {inventorySummary.length === 0 ? (
         <div className="col-span-full text-center py-8">
           <Package className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No inventory data</h3>
-          <p className="mt-1 text-sm text-gray-500">No shops have been set up with inventory yet.</p>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No shops found</h3>
+          <p className="mt-1 text-sm text-gray-500">Create shops first to manage inventory.</p>
         </div>
       ) : (
         inventorySummary.map((shop) => {
@@ -42,7 +49,7 @@ export function ShopInventoryCards() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${shop.lowStockCount > 0 ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                    <div className={`w-3 h-3 rounded-full ${shop.lowStockCount > 0 ? 'bg-red-500' : shop.totalItems > 0 ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                     <div>
                       <h3 className="font-semibold text-gray-900">{shop.shopName}</h3>
                       <p className="text-sm text-gray-500">{shop.shopLocation}</p>
@@ -54,7 +61,9 @@ export function ShopInventoryCards() {
               <CardContent className="space-y-3">
                 {shopInventoryItems.length === 0 ? (
                   <div className="text-center py-4">
-                    <p className="text-sm text-gray-500">No products in inventory</p>
+                    <Package className="mx-auto h-8 w-8 text-gray-400" />
+                    <p className="text-sm text-gray-500 mt-2">No products in inventory</p>
+                    <p className="text-xs text-gray-400">Click manage to add products</p>
                   </div>
                 ) : (
                   shopInventoryItems.slice(0, 3).map((item) => (
@@ -78,20 +87,33 @@ export function ShopInventoryCards() {
                     +{shopInventoryItems.length - 3} more products
                   </p>
                 )}
-                <div className="flex justify-between items-center pt-3 border-t">
-                  <span className="font-semibold text-gray-900">Total Items</span>
-                  <span className="font-bold text-gray-900">{shop.totalItems} Bags</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-gray-900">Total Value</span>
-                  <span className="font-bold text-gray-900">₦{shop.totalValue.toLocaleString()}</span>
-                </div>
-                {shop.lowStockCount > 0 && (
-                  <div className="flex justify-between items-center text-red-600">
-                    <span className="font-semibold text-sm">Low Stock Items</span>
-                    <span className="font-bold text-sm">{shop.lowStockCount}</span>
+
+                <div className="pt-3 border-t space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-gray-900">Total Items</span>
+                    <span className="font-bold text-gray-900">{shop.totalItems} Bags</span>
                   </div>
-                )}
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-gray-900">Total Value</span>
+                    <span className="font-bold text-gray-900">₦{shop.totalValue.toLocaleString()}</span>
+                  </div>
+                  {shop.lowStockCount > 0 && (
+                    <div className="flex justify-between items-center text-red-600">
+                      <span className="font-semibold text-sm">Low Stock Items</span>
+                      <span className="font-bold text-sm">{shop.lowStockCount}</span>
+                    </div>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-3"
+                    onClick={() => handleManageInventory(shop.shopId)}
+                  >
+                    Manage Inventory
+                    <ArrowRight size={16} className="ml-2" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )
