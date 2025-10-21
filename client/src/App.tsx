@@ -104,7 +104,7 @@ function App() {
             <Route path="orders" element={<SalesOrdersPage />} />
             <Route path="inventory" element={<SalesInventoryPage />} />
             <Route path="history" element={<SalesHistoryPage />} />
-            <Route path="deliveries" element={<div>Manage Deliveries Page</div>} />
+            {/* <Route path="deliveries" element={<div>Manage Deliveries Page</div>} /> */}
             {/* <Route path="invoices" element={<div>Manage Invoices Page</div>} />
           <Route path="payments" element={<div>Manage Payments Page</div>} /> */}
           </Route>

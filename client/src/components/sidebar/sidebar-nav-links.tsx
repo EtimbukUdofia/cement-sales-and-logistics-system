@@ -25,7 +25,7 @@ export function SidebarNavLinks() {
     // { to: "/sales/customers", icon: Users, label: "Customers" },
     { to: "/sales/orders", icon: ShoppingCart, label: "Orders" },
     { to: "/sales/inventory", icon: Warehouse, label: "Inventory" },
-    { to: "/sales/deliveries", icon: Truck, label: "Deliveries" },
+    // { to: "/sales/deliveries", icon: Truck, label: "Deliveries" },
     // { to: "/sales/invoices", icon: Package, label: "Invoices" },
     // { to: "/sales/payments", icon: Store, label: "Payments" },
     { to: "/sales/history", icon: BarChart2, label: "History" },
