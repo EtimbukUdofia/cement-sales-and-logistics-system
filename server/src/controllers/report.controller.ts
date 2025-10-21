@@ -1,6 +1,9 @@
 import type { Response } from 'express';
+import mongoose from 'mongoose';
 import SalesOrder from '../models/SalesOrder.js';
 import Customer from '../models/Customer.js';
+import Product from '../models/Product.js';
+import Inventory from '../models/Inventory.js';
 import type { AuthRequest } from '../interfaces/interface.js';
 
 export const getSalesHistory = async (req: AuthRequest, res: Response) => {
@@ -675,6 +678,284 @@ export const getAdminDashboardMetrics = async (req: AuthRequest, res: Response) 
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve admin dashboard metrics'
+    });
+  }
+};
+
+// Comprehensive reports endpoint
+export const getReports = async (req: AuthRequest, res: Response) => {
+  try {
+    const { shop, from, to } = req.query;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+
+    // Parse date range
+    const startDate = from ? new Date(from as string) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const endDate = to ? new Date(to as string) : new Date();
+
+    // Build query filters
+    const matchFilter: any = {
+      orderDate: { $gte: startDate, $lte: endDate }
+    };
+
+    // Filter by shop if specified and not "all"
+    if (shop && shop !== 'all') {
+      matchFilter.shop = new mongoose.Types.ObjectId(shop as string);
+    }
+
+    // For sales persons, only show their shop data
+    if (userRole === 'salesPerson' && req.user?.shopId) {
+      matchFilter.shop = new mongoose.Types.ObjectId(req.user.shopId);
+    }
+
+    console.log('Report query filter:', matchFilter);
+
+    // Get sales orders data
+    const salesOrders = await SalesOrder.find(matchFilter)
+      .populate('shop', 'name address')
+      .populate('customer', 'name phone email')
+      .populate('items.product', 'name variant price')
+      .populate('salesPerson', 'username email')
+      .sort({ orderDate: -1 });
+
+    console.log(`Found ${salesOrders.length} sales orders`);
+
+    // Calculate revenue metrics
+    const totalRevenue = salesOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const totalOrders = salesOrders.length;
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    // Get unique customers
+    const uniqueCustomers = new Set(salesOrders.map(order => order.customer._id.toString()));
+    const totalCustomers = uniqueCustomers.size;
+
+    // Get revenue by month for the last 6 months
+    const revenueByMonth = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+      const monthOrders = salesOrders.filter(order =>
+        order.orderDate >= monthStart && order.orderDate <= monthEnd
+      );
+
+      revenueByMonth.push({
+        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        revenue: monthOrders.reduce((sum, order) => sum + order.totalAmount, 0),
+        orders: monthOrders.length
+      });
+    }
+
+    // Generate sales overview for last 30 days
+    const salesOverview = [];
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+
+      const dayOrders = salesOrders.filter(order =>
+        order.orderDate >= dayStart && order.orderDate < dayEnd
+      );
+
+      salesOverview.push({
+        date: dayStart.toISOString().split('T')[0],
+        revenue: dayOrders.reduce((sum, order) => sum + order.totalAmount, 0),
+        orders: dayOrders.length
+      });
+    }
+
+    // Calculate product performance
+    const productMap = new Map();
+    salesOrders.forEach(order => {
+      order.items.forEach((item: any) => {
+        const key = `${item.product.name}-${item.product.variant}`;
+        if (!productMap.has(key)) {
+          productMap.set(key, {
+            productName: item.product.name,
+            variant: item.product.variant,
+            revenue: 0,
+            quantity: 0,
+            orders: 0
+          });
+        }
+        const product = productMap.get(key);
+        product.revenue += item.totalPrice;
+        product.quantity += item.quantity;
+        product.orders += 1;
+      });
+    });
+
+    const productPerformance = Array.from(productMap.values())
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+
+    // Get inventory data
+    const inventoryQuery: any = {};
+    if (shop && shop !== 'all') {
+      inventoryQuery.shop = new mongoose.Types.ObjectId(shop as string);
+    }
+    if (userRole === 'salesPerson' && req.user?.shopId) {
+      inventoryQuery.shop = new mongoose.Types.ObjectId(req.user.shopId);
+    }
+
+    const inventory = await Inventory.find(inventoryQuery)
+      .populate('product', 'name variant price')
+      .populate('shop', 'name address');
+
+    const totalProducts = inventory.length;
+    const lowStockItems = inventory
+      .filter((item: any) => item.quantity <= item.minStockLevel && item.quantity > 0)
+      .map((item: any) => ({
+        productName: item.product.name,
+        variant: item.product.variant,
+        currentStock: item.quantity,
+        minimumStock: item.minStockLevel,
+        shopName: item.shop.name
+      }));
+
+    const outOfStockItems = inventory
+      .filter((item: any) => item.quantity === 0)
+      .map((item: any) => ({
+        productName: item.product.name,
+        variant: item.product.variant,
+        shopName: item.shop.name
+      }));
+
+    const topStockItems = inventory
+      .sort((a: any, b: any) => b.quantity - a.quantity)
+      .slice(0, 10)
+      .map((item: any) => ({
+        productName: item.product.name,
+        variant: item.product.variant,
+        currentStock: item.quantity,
+        shopName: item.shop.name
+      }));
+
+    // Get sales person performance (only for admin users)
+    let salesPersonPerformance = [];
+    if (userRole === 'admin') {
+      const salesPersonMap = new Map();
+      salesOrders.forEach((order: any) => {
+        if (order.salesPerson) {
+          const key = order.salesPerson._id.toString();
+          if (!salesPersonMap.has(key)) {
+            salesPersonMap.set(key, {
+              id: order.salesPerson._id,
+              name: order.salesPerson.username,
+              email: order.salesPerson.email,
+              shopName: order.shop.name,
+              totalRevenue: 0,
+              totalOrders: 0,
+              orders: []
+            });
+          }
+          const salesperson = salesPersonMap.get(key);
+          salesperson.totalRevenue += order.totalAmount;
+          salesperson.totalOrders += 1;
+          salesperson.orders.push(order);
+        }
+      });
+
+      salesPersonPerformance = Array.from(salesPersonMap.values())
+        .map((person, index) => ({
+          ...person,
+          averageOrderValue: person.totalOrders > 0 ? person.totalRevenue / person.totalOrders : 0,
+          revenueGrowth: Math.random() * 20 - 5, // Mock growth for now
+          ordersGrowth: Math.random() * 15 - 5, // Mock growth for now
+          performanceScore: Math.min(100, (person.totalRevenue / 10000) + (person.totalOrders * 2)),
+          rank: index + 1
+        }))
+        .sort((a, b) => b.totalRevenue - a.totalRevenue);
+    }
+
+    // Get shop comparison (only for admin users and "all shops" view)
+    let shopComparison = [];
+    if (userRole === 'admin' && (!shop || shop === 'all')) {
+      const shopMap = new Map();
+      salesOrders.forEach((order: any) => {
+        const key = order.shop._id.toString();
+        if (!shopMap.has(key)) {
+          shopMap.set(key, {
+            shopId: order.shop._id,
+            shopName: order.shop.name,
+            location: order.shop.address,
+            totalRevenue: 0,
+            totalOrders: 0,
+            orders: []
+          });
+        }
+        const shop = shopMap.get(key);
+        shop.totalRevenue += order.totalAmount;
+        shop.totalOrders += 1;
+        shop.orders.push(order);
+      });
+
+      shopComparison = Array.from(shopMap.values())
+        .map(shop => ({
+          ...shop,
+          averageOrderValue: shop.totalOrders > 0 ? shop.totalRevenue / shop.totalOrders : 0,
+          revenueGrowth: Math.random() * 25 - 10, // Mock growth for now
+          ordersGrowth: Math.random() * 20 - 10, // Mock growth for now
+          topProduct: productPerformance[0]?.productName || 'N/A',
+          salesPersonCount: salesPersonPerformance.filter(sp => sp.shopName === shop.shopName).length,
+          inventoryValue: inventory
+            .filter((item: any) => item.shop._id.toString() === shop.shopId.toString())
+            .reduce((sum: number, item: any) => sum + (item.quantity * (item.product?.price || 1000)), 0),
+          performanceScore: Math.min(100, (shop.totalRevenue / 50000) + (shop.totalOrders * 1.5))
+        }))
+        .sort((a, b) => b.totalRevenue - a.totalRevenue);
+    }
+
+    const reportData = {
+      revenue: {
+        totalRevenue,
+        totalOrders,
+        totalProducts: await Product.countDocuments(),
+        totalCustomers,
+        revenueGrowth: Math.random() * 20 - 5, // Mock growth for now
+        ordersGrowth: Math.random() * 15 - 5, // Mock growth for now
+        averageOrderValue,
+        topSellingProduct: productPerformance[0]?.productName || 'N/A',
+        revenueByMonth
+      },
+      salesOverview,
+      productPerformance,
+      inventory: {
+        totalProducts,
+        lowStockItems,
+        outOfStockItems,
+        topStockItems,
+        stockTurnover: [] // Would need additional data tracking for real turnover calculation
+      },
+      salesPersonPerformance,
+      shopComparison
+    };
+
+    console.log('Report data generated:', {
+      totalRevenue,
+      totalOrders,
+      totalProducts,
+      salesPersonCount: salesPersonPerformance.length,
+      shopCount: shopComparison.length
+    });
+
+    res.status(200).json({
+      success: true,
+      data: reportData
+    });
+
+  } catch (error) {
+    console.error('Error getting reports:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve reports'
     });
   }
 };

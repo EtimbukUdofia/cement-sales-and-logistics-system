@@ -138,77 +138,19 @@ export default function ReportsPage() {
         to: dateRange.to.toISOString()
       })
 
+      console.log('Fetching reports with params:', params.toString())
       const response = await apiClient.getReports(params)
+      console.log('Reports response:', response)
+
       if (response.success) {
         setReportData(response.data as ReportData)
+        toast.success('Reports loaded successfully')
+      } else {
+        toast.error(response.message || 'Failed to load reports')
       }
-    } catch {
+    } catch (error) {
+      console.error('Reports fetch error:', error)
       toast.error('Failed to load reports')
-      // Set mock data for development
-      setReportData({
-        revenue: {
-          totalRevenue: 2450000,
-          totalOrders: 1234,
-          totalProducts: 45,
-          totalCustomers: 567,
-          revenueGrowth: 12.5,
-          ordersGrowth: 8.3,
-          averageOrderValue: 1986.23,
-          topSellingProduct: "Dangote 3X Cement",
-          revenueByMonth: [
-            { month: "Jan", revenue: 200000, orders: 120 },
-            { month: "Feb", revenue: 220000, orders: 135 },
-            { month: "Mar", revenue: 245000, orders: 142 }
-          ]
-        },
-        salesOverview: [
-          { date: "2024-01-01", revenue: 15000, orders: 12 },
-          { date: "2024-01-02", revenue: 18000, orders: 14 },
-          { date: "2024-01-03", revenue: 22000, orders: 16 }
-        ],
-        productPerformance: [
-          { productName: "Dangote 3X Cement", variant: "50kg", revenue: 450000, quantity: 1200, orders: 150 },
-          { productName: "Lafarge Elephant", variant: "50kg", revenue: 380000, quantity: 980, orders: 120 }
-        ],
-        inventory: {
-          totalProducts: 45,
-          lowStockItems: [],
-          outOfStockItems: [],
-          topStockItems: [],
-          stockTurnover: []
-        },
-        salesPersonPerformance: [
-          {
-            id: "1",
-            name: "John Doe",
-            email: "john@example.com",
-            shopName: "Main Shop",
-            totalRevenue: 125000,
-            totalOrders: 85,
-            averageOrderValue: 1470.59,
-            revenueGrowth: 15.2,
-            ordersGrowth: 12.3,
-            performanceScore: 92,
-            rank: 1
-          }
-        ],
-        shopComparison: [
-          {
-            shopId: "1",
-            shopName: "Main Shop",
-            location: "Lagos",
-            totalRevenue: 500000,
-            totalOrders: 320,
-            averageOrderValue: 1562.50,
-            revenueGrowth: 18.5,
-            ordersGrowth: 12.3,
-            topProduct: "Dangote 3X Cement",
-            salesPersonCount: 5,
-            inventoryValue: 2500000,
-            performanceScore: 95
-          }
-        ]
-      })
     } finally {
       setIsLoading(false)
     }
@@ -222,7 +164,7 @@ export default function ReportsPage() {
         const normalizedShops = (response?.shops || []).map((s: ShopData) => ({
           _id: s._id,
           name: s.name,
-          location: s.location,
+          location: s.address, // Use address as location
           // manager can be a string or an object from the API; prefer username, then email, then fallback to empty string
           manager:
             typeof s.manager === "string"

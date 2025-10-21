@@ -2,7 +2,8 @@ import { Router } from 'express';
 import {
   getSalesHistory,
   getSalesDashboardMetrics,
-  getAdminDashboardMetrics
+  getAdminDashboardMetrics,
+  getReports
 } from '../controllers/report.controller.js';
 import { verifyToken } from '../middlewares/verifyToken.js';
 
@@ -18,5 +19,8 @@ router.get('/dashboard-metrics', getSalesDashboardMetrics);
 
 // Get sales history with filtering and pagination
 router.get('/history', getSalesHistory);
+
+// Get comprehensive reports
+router.get('/', getReports);
 
 export default router;
