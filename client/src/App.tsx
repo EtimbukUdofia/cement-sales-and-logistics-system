@@ -21,6 +21,7 @@ import SalesOrdersPage from './pages/Sales/Orders/SalesOrdersPage'
 import ReportsPage from './pages/Admin/Reports/ReportsPage'
 import SalesHistoryPage from './pages/Sales/Reports/SalesHistoryPage'
 import ShopsPage from './pages/Admin/Shops/ShopsPage'
+import ShopInventoryPage from './pages/Admin/ShopInventory/ShopInventoryPage'
 import SalesDashboard from './pages/Sales/Dashboard/SalesDashboard'
 
 const ProtectedRoute = () => {
@@ -83,6 +84,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="shops" element={<ShopsPage />} />
+            <Route path="shops/:shopId/inventory" element={<ShopInventoryPage />} />
             <Route path="suppliers" element={<SuppliersPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="orders/create" element={<div>Create Purchase Order Page</div>} />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router"
 import {
   ShopCard,
   ShopHeader,
@@ -13,6 +14,7 @@ import { AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 
 const ShopsPage = () => {
+  const navigate = useNavigate();
   const { shops, isLoading, error, fetchShops, deleteShop, clearError } = useShopStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingShop, setEditingShop] = useState<Shop | null>(null);
@@ -64,6 +66,10 @@ const ShopsPage = () => {
     fetchShops(); // Refresh the list
   };
 
+  const handleManageInventory = (shopId: string) => {
+    navigate(`/admin/shops/${shopId}/inventory`);
+  };
+
   const clearDeleteError = () => {
     clearError();
     setDeletingShop(null);
@@ -106,6 +112,7 @@ const ShopsPage = () => {
                   shop={shop}
                   onEdit={handleEditShop}
                   onDelete={handleDeleteClick}
+                  onManageInventory={handleManageInventory}
                 />
               ))}
             </div>

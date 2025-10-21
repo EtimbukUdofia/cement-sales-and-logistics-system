@@ -1,16 +1,17 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2, Store, MapPin, Phone, Mail, User } from "lucide-react"
+import { Edit, Trash2, Store, MapPin, Phone, Mail, User, Package } from "lucide-react"
 import { type Shop } from "@/store/shopStore"
 
 interface ShopCardProps {
   shop: Shop
   onEdit: (shop: Shop) => void
   onDelete: (shopId: string) => void
+  onManageInventory?: (shopId: string) => void
 }
 
-export function ShopCard({ shop, onEdit, onDelete }: ShopCardProps) {
+export function ShopCard({ shop, onEdit, onDelete, onManageInventory }: ShopCardProps) {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
@@ -79,6 +80,21 @@ export function ShopCard({ shop, onEdit, onDelete }: ShopCardProps) {
             </div>
           )}
         </div>
+
+        {/* Action Buttons */}
+        {onManageInventory && (
+          <div className="pt-3 mt-3 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onManageInventory(shop._id)}
+              className="w-full text-xs"
+            >
+              <Package className="h-3 w-3 mr-2" />
+              Manage Inventory
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
