@@ -467,13 +467,13 @@ class ApiClient {
   }
 
   async updateShopInventory(
-    shopId: string, 
+    shopId: string,
     updateData: {
       productId: string;
       newQuantity: number;
       changeType: 'increase' | 'decrease' | 'restock' | 'adjustment';
       reason?: string;
-    }, 
+    },
     options?: RequestInit
   ) {
     return this.request(`/inventory/admin/shops/${shopId}/inventory/update`, {
@@ -484,17 +484,17 @@ class ApiClient {
   }
 
   async getShopInventoryHistory(
-    shopId: string, 
-    params?: { page?: number; limit?: number }, 
+    shopId: string,
+    params?: { page?: number; limit?: number },
     options?: RequestInit
   ) {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', params.page.toString());
     if (params?.limit) query.append('limit', params.limit.toString());
-    
+
     const queryString = query.toString();
     return this.request(
-      `/inventory/admin/shops/${shopId}/inventory/history${queryString ? `?${queryString}` : ''}`, 
+      `/inventory/admin/shops/${shopId}/inventory/history${queryString ? `?${queryString}` : ''}`,
       options
     );
   }
