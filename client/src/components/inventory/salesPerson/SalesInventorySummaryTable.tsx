@@ -100,6 +100,12 @@ export function SalesInventorySummaryTable({ inventory, isLoading }: SalesInvent
           </TableHeader>
           <TableBody>
             {inventory.map((item) => {
+              // Skip items without valid product data
+              if (!item.product) {
+                console.warn('Inventory item without product data found:', item);
+                return null;
+              }
+
               const stockStatus = getStockStatus(item.quantity, item.minStockLevel);
               const StatusIcon = stockStatus.icon;
               const totalValue = item.quantity * item.product.price;
@@ -145,7 +151,7 @@ export function SalesInventorySummaryTable({ inventory, isLoading }: SalesInvent
                   </TableCell>
                 </TableRow>
               );
-            })}
+            }).filter(Boolean)} {/* Filter out null items */}
           </TableBody>
         </Table>
       </CardContent>

@@ -2,6 +2,10 @@ import type { Response } from 'express';
 import mongoose from "mongoose";
 import type { AuthRequest } from '../interfaces/interface.js';
 import Product from '../models/Product.js';
+import Inventory from '../models/Inventory.js';
+import InventoryHistory from '../models/InventoryHistory.js';
+import PurchaseOrder from '../models/PurchaseOrder.js';
+import SalesOrder from '../models/SalesOrder.js';
 import { z } from 'zod';
 import { escapeRegExp } from '../utils.js';
 import { initializeProductInventory } from './inventory.controller.js';
@@ -25,7 +29,7 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const { name, brand, price, size, variant, imageUrl, description, isActive } = parsed.data;
+    const { name, brand, variant } = parsed.data;
 
     const existingProduct = await Product.findOne({ name, brand, variant });
     if (existingProduct) {
@@ -219,14 +223,87 @@ export const deleteProduct = async (req: AuthRequest, res: Response): Promise<vo
   }
 
   try {
-    const deletedProduct = await Product.findByIdAndDelete(id);
-    if (!deletedProduct) {
+    // First, check if the product exists
+    const productToDelete = await Product.findById(id);
+    if (!productToDelete) {
       res.status(404).json({ success: false, message: 'Product not found' });
       return;
     }
 
-    res.status(200).json({ success: true, message: 'Product deleted successfully', product: deletedProduct });
+    // Check for active references that might prevent deletion
+    const [activePurchaseOrders, activeSalesOrders] = await Promise.all([
+      PurchaseOrder.countDocuments({
+        'items.product': id,
+        status: { $in: ['pending', 'approved', 'processing'] }
+      }),
+      SalesOrder.countDocuments({
+        'items.product': id,
+        status: { $in: ['pending', 'confirmed', 'processing'] }
+      })
+    ]);
+
+    // If there are active orders, warn but still allow deletion
+    const warnings = [];
+    if (activePurchaseOrders > 0) {
+      warnings.push(`${activePurchaseOrders} active purchase order(s) reference this product`);
+    }
+    if (activeSalesOrders > 0) {
+      warnings.push(`${activeSalesOrders} active sales order(s) reference this product`);
+    }
+
+    // Start a transaction to ensure all deletions happen atomically
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Delete all inventory history records for this product
+      const historyDeleteResult = await InventoryHistory.deleteMany(
+        { product: id },
+        { session }
+      );
+
+      // Delete all inventory records for this product
+      const inventoryDeleteResult = await Inventory.deleteMany(
+        { product: id },
+        { session }
+      );
+
+      // Finally, delete the product itself
+      const deletedProduct = await Product.findByIdAndDelete(id, { session });
+
+      // Commit the transaction
+      await session.commitTransaction();
+
+      console.log(`Product deletion completed:
+        - Product: ${deletedProduct?.name}
+        - Inventory records deleted: ${inventoryDeleteResult.deletedCount}
+        - History records deleted: ${historyDeleteResult.deletedCount}`);
+
+      const response: any = {
+        success: true,
+        message: 'Product and related inventory data deleted successfully',
+        product: deletedProduct,
+        deletedCounts: {
+          inventoryRecords: inventoryDeleteResult.deletedCount,
+          historyRecords: historyDeleteResult.deletedCount
+        }
+      };
+
+      // Include warnings if any
+      if (warnings.length > 0) {
+        response.warnings = warnings;
+      }
+
+      res.status(200).json(response);
+    } catch (transactionError) {
+      // Rollback the transaction on error
+      await session.abortTransaction();
+      throw transactionError;
+    } finally {
+      session.endSession();
+    }
   } catch (error) {
+    console.error('Error deleting product and related data:', error);
     res.status(500).json({ success: false, message: 'Server error deleting product' });
   }
 };

@@ -28,7 +28,9 @@ export function useInventory() {
 
       // Handle inventory response
       if (inventoryResponse.success && inventoryResponse.data) {
-        setInventory(inventoryResponse.data);
+        // Filter out inventory items with null or missing product data
+        const validInventory = inventoryResponse.data.filter(item => item.product !== null && item.product !== undefined);
+        setInventory(validInventory);
       } else {
         setInventory([]);
       }
@@ -64,9 +66,12 @@ export function useInventory() {
   }, [user]);
 
   const filterInventory = useCallback((searchQuery: string) => {
-    if (!searchQuery.trim()) return inventory;
+    // Filter out items with invalid product data first
+    const validInventory = inventory.filter(item => item.product !== null && item.product !== undefined);
 
-    return inventory.filter((item) =>
+    if (!searchQuery.trim()) return validInventory;
+
+    return validInventory.filter((item) =>
       item.product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.product.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.product.variant?.toLowerCase().includes(searchQuery.toLowerCase()) ||

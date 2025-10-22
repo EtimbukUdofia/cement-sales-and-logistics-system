@@ -66,21 +66,24 @@ export function ShopInventoryCards() {
                     <p className="text-xs text-gray-400">Click manage to add products</p>
                   </div>
                 ) : (
-                  shopInventoryItems.slice(0, 3).map((item) => (
-                    <div key={item._id} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {item.product.name} {item.product.variant && `(${item.product.variant})`}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Last updated {new Date(item.updatedAt).toLocaleDateString()}
-                        </p>
+                  shopInventoryItems
+                    .filter(item => item.product !== null && item.product !== undefined) // Filter valid items
+                    .slice(0, 3)
+                    .map((item) => (
+                      <div key={item._id} className="flex justify-between items-center py-2 border-b last:border-b-0">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {item.product.name} {item.product.variant && `(${item.product.variant})`}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Last updated {new Date(item.updatedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <span className={`text-sm font-semibold ${item.quantity <= item.minStockLevel ? 'text-red-600' : 'text-gray-700'}`}>
+                          {item.quantity} Bags
+                        </span>
                       </div>
-                      <span className={`text-sm font-semibold ${item.quantity <= item.minStockLevel ? 'text-red-600' : 'text-gray-700'}`}>
-                        {item.quantity} Bags
-                      </span>
-                    </div>
-                  ))
+                    ))
                 )}
                 {shopInventoryItems.length > 3 && (
                   <p className="text-xs text-gray-500 text-center">

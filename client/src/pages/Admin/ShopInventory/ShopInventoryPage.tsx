@@ -287,64 +287,66 @@ export default function ShopInventoryPage() {
                     <p className="text-muted-foreground mt-4">No inventory items found</p>
                   </div>
                 ) : (
-                  inventory.map((item) => {
-                    const stockStatus = getStockStatus(item);
-                    return (
-                      <Card key={item._id} className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <h3 className="font-semibold">{item.product.name}</h3>
-                              <Badge variant={stockStatus.variant}>
-                                {stockStatus.label}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {item.product.brand} • {item.product.type} • ₦{item.product.price}/unit
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Min: {item.minStockLevel} • Max: {item.maxStockLevel}
-                              {item.lastRestocked && ` • Last restocked: ${new Date(item.lastRestocked).toLocaleDateString()}`}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-4">
-                            <div className="text-center">
-                              <p className="text-2xl font-bold">{item.quantity}</p>
-                              <p className="text-xs text-muted-foreground">units</p>
+                  inventory
+                    .filter(item => item.product !== null && item.product !== undefined) // Filter valid items
+                    .map((item) => {
+                      const stockStatus = getStockStatus(item);
+                      return (
+                        <Card key={item._id} className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3">
+                                <h3 className="font-semibold">{item.product.name}</h3>
+                                <Badge variant={stockStatus.variant}>
+                                  {stockStatus.label}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {item.product.brand} • {item.product.type} • ₦{item.product.price}/unit
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Min: {item.minStockLevel} • Max: {item.maxStockLevel}
+                                {item.lastRestocked && ` • Last restocked: ${new Date(item.lastRestocked).toLocaleDateString()}`}
+                              </p>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleQuickAdjustment(item, -1)}
-                                disabled={updating === item.product._id || item.quantity === 0}
-                              >
-                                <Minus size={16} />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleQuickAdjustment(item, 1)}
-                                disabled={updating === item.product._id}
-                              >
-                                <Plus size={16} />
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => openBulkUpdateModal(item)}
-                                disabled={updating === item.product._id}
-                              >
-                                <Save size={16} className="mr-2" />
-                                Update
-                              </Button>
+                            <div className="flex items-center gap-4">
+                              <div className="text-center">
+                                <p className="text-2xl font-bold">{item.quantity}</p>
+                                <p className="text-xs text-muted-foreground">units</p>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleQuickAdjustment(item, -1)}
+                                  disabled={updating === item.product._id || item.quantity === 0}
+                                >
+                                  <Minus size={16} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleQuickAdjustment(item, 1)}
+                                  disabled={updating === item.product._id}
+                                >
+                                  <Plus size={16} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => openBulkUpdateModal(item)}
+                                  disabled={updating === item.product._id}
+                                >
+                                  <Save size={16} className="mr-2" />
+                                  Update
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </Card>
-                    );
-                  })
+                        </Card>
+                      );
+                    })
                 )}
               </div>
             </CardContent>
