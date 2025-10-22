@@ -25,15 +25,15 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const { name, brand, price, size } = parsed.data;
+    const { name, brand, price, size, variant, imageUrl, description, isActive } = parsed.data;
 
-    const existingProduct = await Product.findOne({ name, brand });
+    const existingProduct = await Product.findOne({ name, brand, variant });
     if (existingProduct) {
       res.status(409).json({ success: false, message: 'Product with the same name and brand already exists' });
       return;
     }
 
-    const newProduct = new Product({ name, brand, price, size });
+    const newProduct = new Product(parsed.data);
     const result = await newProduct.save();
 
     // Initialize inventory for the new product (create entries for all active shops)

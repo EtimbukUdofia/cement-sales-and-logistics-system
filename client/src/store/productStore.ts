@@ -66,6 +66,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
   createProduct: async (productData: CreateProductData) => {
     set({ isLoading: true, error: null });
     try {
+      console.log(productData);
       const response = await apiClient.createProduct(productData);
       if (response.success) {
         // Refresh products list after creation

@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Edit, Trash2 } from "lucide-react"
 import type { Product } from "@/store/productStore"
 
@@ -45,7 +46,7 @@ export function ProductCard({
   };
 
   // Fallback image if no imageUrl is provided
-  const displayImage = imageUrl || '/assets/products/cement-placeholder.jpg';
+  const displayImage = imageUrl;
   const displayVariant = variant || '';
   const displaySize = `${size}kg`;
 
@@ -58,14 +59,22 @@ export function ProductCard({
             src={displayImage}
             alt={`${brand} ${name} ${variant || ''}`}
             className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/assets/products/cement-placeholder.jpg';
-            }}
+          // onError={(e) => {
+          //   const target = e.target as HTMLImageElement;
+          //   target.src = '/assets/products/cement-placeholder.jpg';
+          // }}
           />
           {!isActive && (
             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
               <span className="text-white font-semibold">Inactive</span>
+            </div>
+          )}
+          {/* Variant Badge */}
+          {displayVariant && (
+            <div className="absolute top-2 right-2">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 hover:bg-purple-200">
+                {displayVariant}
+              </Badge>
             </div>
           )}
         </div>
@@ -101,11 +110,6 @@ export function ProductCard({
             <p className="text-gray-500 text-sm">
               {displaySize}
             </p>
-            {displayVariant && (
-              <p className="text-purple-600 font-medium text-lg mt-1 text-right">
-                {displayVariant}
-              </p>
-            )}
           </div>
 
           {/* Price Section */}

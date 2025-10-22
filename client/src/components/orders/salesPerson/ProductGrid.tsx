@@ -67,7 +67,7 @@ function ProductCard({ product }: ProductCardProps) {
               {/* <span className="text-white font-bold text-xs">{product.variant}</span> */}
             </div>
             <div>
-              <h3 className="font-medium text-sm">{product.name}</h3>
+              <h3 className="font-medium text-sm">{ product.brand} {product.name}</h3>
               <p className="text-xs text-muted-foreground">{product.size}kg size</p>
             </div>
           </div>
