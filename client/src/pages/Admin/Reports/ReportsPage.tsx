@@ -138,9 +138,7 @@ export default function ReportsPage() {
         to: dateRange.to.toISOString()
       })
 
-      console.log('Fetching reports with params:', params.toString())
       const response = await apiClient.getReports(params)
-      console.log('Reports response:', response)
 
       if (response.success) {
         setReportData(response.data as ReportData)

@@ -11,11 +11,11 @@ import Dashboard from './pages/Admin/dashboard/Dashboard'
 import MainLayout from './components/layouts/MainLayout'
 import ProductsPage from './pages/Admin/Products'
 import SuppliersPage from './pages/Admin/Suppliers'
-import OrdersPage from './pages/Admin/Orders'
+// import OrdersPage from './pages/Admin/Orders'
 import UserManagementPage from './pages/Admin/UserManagement'
 import InventoryPage from './pages/Admin/Inventory/InventoryPage'
-import RoutesPage from './pages/Admin/Routes/RoutesPage'
-import TrucksPage from './pages/Admin/Trucks/TrucksPage'
+// import RoutesPage from './pages/Admin/Routes/RoutesPage'
+// import TrucksPage from './pages/Admin/Trucks/TrucksPage'
 import SalesInventoryPage from './pages/Sales/Inventory/SalesInventoryPage'
 import SalesOrdersPage from './pages/Sales/Orders/SalesOrdersPage'
 import ReportsPage from './pages/Admin/Reports/ReportsPage'
@@ -86,11 +86,11 @@ function App() {
             <Route path="shops" element={<ShopsPage />} />
             <Route path="shops/:shopId/inventory" element={<ShopInventoryPage />} />
             <Route path="suppliers" element={<SuppliersPage />} />
-            <Route path="orders" element={<OrdersPage />} />
-            <Route path="orders/create" element={<div>Create Purchase Order Page</div>} />
+            {/* <Route path="orders" element={<OrdersPage />} /> */}
+            {/* <Route path="orders/create" element={<div>Create Purchase Order Page</div>} /> */}
             <Route path="inventory" element={<InventoryPage />} />
-            <Route path="routes" element={<RoutesPage />} />
-            <Route path="trucks" element={<TrucksPage />} />
+            {/* <Route path="routes" element={<RoutesPage />} /> */}
+            {/* <Route path="trucks" element={<TrucksPage />} /> */}
             <Route path="reports" element={<ReportsPage />} />
             <Route path="user-roles" element={<UserManagementPage />} />
           </Route>

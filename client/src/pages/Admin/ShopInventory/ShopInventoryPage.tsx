@@ -19,7 +19,7 @@ interface Product {
   name: string;
   brand: string;
   type: string;
-  unitPrice: number;
+  price: number;
 }
 
 interface ShopInventoryItem {
@@ -300,7 +300,7 @@ export default function ShopInventoryPage() {
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {item.product.brand} • {item.product.type} • ₹{item.product.unitPrice}/unit
+                              {item.product.brand} • {item.product.type} • ₦{item.product.price}/unit
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
                               Min: {item.minStockLevel} • Max: {item.maxStockLevel}
