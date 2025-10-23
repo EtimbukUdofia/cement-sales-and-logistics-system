@@ -126,7 +126,7 @@ export const getCustomerById = async (req: AuthRequest, res: Response): Promise<
   }
 };
 
-// create new customer
+// create new customer or return existing one
 export const createCustomer = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const parsed = createCustomerSchema.safeParse(req.body);
@@ -135,31 +135,32 @@ export const createCustomer = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
-    // const { email, phone } = parsed.data;
+    const { email, phone } = parsed.data;
 
-    // let existingCustomer;
-    // if (email === undefined) {
-    //   existingCustomer = await Customer.findOne({ phone }).lean();
-    // } else {
-    //   existingCustomer = await Customer.findOne({
-    //     $or: [{ email }, { phone }]
-    //   }).lean();
-    // }
+    // Check for existing customer by phone number (primary) and email (if provided)
+    let existingCustomer;
+    if (email === undefined) {
+      // Only check by phone if no email provided
+      existingCustomer = await Customer.findOne({ phone }).lean();
+    } else {
+      // Check by both email and phone if email is provided
+      existingCustomer = await Customer.findOne({
+        $or: [{ email }, { phone }]
+      }).lean();
+    }
 
-    // if (existingCustomer) {
-    //   if (email && existingCustomer.email === email) {
-    //     res.status(409).json({ success: false, message: 'Customer with this email already exists' });
-    //     return;
-    //   }
-    //   if (phone && existingCustomer.phone === phone) {
-    //     res.status(409).json({ success: false, message: 'Customer with this phone already exists' });
-    //     return;
-    //   }
-    //   res.status(409).json({ success: false, message: 'Customer with this email or phone already exists' });
-    //   return;
-    // }
+    if (existingCustomer) {
+      // Return existing customer instead of creating a duplicate
+      res.status(200).json({
+        success: true,
+        customer: existingCustomer,
+        message: 'Customer already exists'
+      });
+      return;
+    }
 
-    const newCustomer = new Customer(req.body);
+    // Create new customer if none exists
+    const newCustomer = new Customer(parsed.data);
     const savedCustomer = await newCustomer.save();
     res.status(201).json({ success: true, customer: savedCustomer });
   } catch (error) {
@@ -167,6 +168,25 @@ export const createCustomer = async (req: AuthRequest, res: Response): Promise<v
     // handle duplicate key (race condition) if unique index exists on email/phone
     const errAny = error as any;
     if (errAny?.code === 11000 || errAny?.codeName === 'DuplicateKey') {
+      // If duplicate key error occurs, try to find and return the existing customer
+      try {
+        const { email, phone } = req.body;
+        const existingCustomer = await Customer.findOne({
+          $or: [{ email }, { phone }]
+        }).lean();
+
+        if (existingCustomer) {
+          res.status(200).json({
+            success: true,
+            customer: existingCustomer,
+            message: 'Customer already exists'
+          });
+          return;
+        }
+      } catch (findError) {
+        // Fall through to generic error
+      }
+
       res.status(409).json({ success: false, message: 'Customer with this email or phone already exists' });
       return;
     }
