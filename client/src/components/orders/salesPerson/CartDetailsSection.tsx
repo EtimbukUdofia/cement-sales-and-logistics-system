@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { useCartStore, type CartItem } from "@/store/cartStore"
 import { CheckoutDialog } from "./CheckoutDialog"
 import { toast } from "sonner"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export function CartDetailsSection({ onCheckoutSuccess }: { onCheckoutSuccess?: () => void }) {
   const items = useCartStore(state => state.items);
@@ -16,6 +16,13 @@ export function CartDetailsSection({ onCheckoutSuccess }: { onCheckoutSuccess?: 
   const getTotalPrice = useCartStore(state => state.getTotalPrice);
   const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
+
+  // Clear input values when cart is empty (after successful checkout)
+  useEffect(() => {
+    if (items.length === 0) {
+      setInputValues({});
+    }
+  }, [items.length]);
 
   const handleIncreaseQuantity = (item: CartItem) => {
     if (item.quantity < item.availableStock) {
@@ -72,7 +79,13 @@ export function CartDetailsSection({ onCheckoutSuccess }: { onCheckoutSuccess?: 
   };
 
   const getInputValue = (item: CartItem): string => {
-    return inputValues[item.id] !== undefined ? inputValues[item.id] : item.quantity.toString();
+    // Only return cached input value if it exists AND the item is actually in the input values
+    // Otherwise, return the current cart quantity to avoid stale values
+    const cachedValue = inputValues[item.id];
+    if (cachedValue !== undefined) {
+      return cachedValue;
+    }
+    return item.quantity.toString();
   };
 
   const handleRemoveItem = (item: CartItem) => {
@@ -84,6 +97,13 @@ export function CartDetailsSection({ onCheckoutSuccess }: { onCheckoutSuccess?: 
       return newValues;
     });
     toast.success(`${item.name} removed from cart`);
+  };
+
+  const handleCheckoutSuccess = () => {
+    // Clear input values when checkout is successful
+    setInputValues({});
+    // Call the parent's onCheckoutSuccess if provided
+    onCheckoutSuccess?.();
   };
 
   const handleCheckout = () => {
@@ -217,7 +237,7 @@ export function CartDetailsSection({ onCheckoutSuccess }: { onCheckoutSuccess?: 
       <CheckoutDialog
         open={showCheckoutDialog}
         onOpenChange={setShowCheckoutDialog}
-        onCheckoutSuccess={onCheckoutSuccess}
+        onCheckoutSuccess={handleCheckoutSuccess}
       />
     </Card>
   )
