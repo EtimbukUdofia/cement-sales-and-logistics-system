@@ -125,6 +125,10 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         validatedData = updateProductSchema.parse(changedFields);
       } else {
         // For new products, validate all required fields
+        if(!formData.imageUrl){
+          // assign fallback image url if none provided
+          formData.imageUrl = "https://www.shutterstock.com/image-photo/cement-powder-trowel-put-bag-600nw-2067658913.jpg";
+        }
         validatedData = createProductSchema.parse(formData);
       }
 
@@ -142,9 +146,10 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         }
       } else {
         // Create new product
+        console.log("validated data: ", validatedData)
         success = await createProduct(validatedData as CreateProductData);
         if (success) {
-          toast.success(`Product "${formData.name}" created successfully!`);
+          toast.success(`Product "${formData.brand, formData.name}" created successfully!`);
         } else {
           // If success is false but no exception was thrown, check store error
           const errorMsg = storeError || 'Failed to create product';

@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+// import { Badge } from "@/components/ui/badge"
 import { Edit, Trash2 } from "lucide-react"
 import type { Product } from "@/store/productStore"
 
@@ -46,7 +46,10 @@ export function ProductCard({
   };
 
   // Fallback image if no imageUrl is provided
-  const displayImage = imageUrl;
+  const displayImage = imageUrl || "https://www.shutterstock.com/image-photo/cement-powder-trowel-put-bag-600nw-2067658913.jpg";
+  // if (!imageUrl) {
+  //   imageUrl = '/assets/products/cement-placeholder.jpg';
+  // };
   const displayVariant = variant || '';
   const displaySize = `${size}kg`;
 
@@ -70,13 +73,13 @@ export function ProductCard({
             </div>
           )}
           {/* Variant Badge */}
-          {displayVariant && (
+          {/* {displayVariant && (
             <div className="absolute top-2 right-2">
               <Badge variant="secondary" className="bg-purple-100 text-purple-800 hover:bg-purple-200">
                 {displayVariant}
               </Badge>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Product Info */}
@@ -110,6 +113,12 @@ export function ProductCard({
             <p className="text-gray-500 text-sm">
               {displaySize}
             </p>
+            {displayVariant && (
+              <p className="text-purple-600 font-medium text-lg mt-1 text-right">
+                {displayVariant}
+              </p>
+            )}
+
           </div>
 
           {/* Price Section */}
