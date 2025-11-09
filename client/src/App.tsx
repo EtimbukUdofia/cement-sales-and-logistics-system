@@ -54,12 +54,23 @@ const RoleBasedRoute = ({ allowedRoles }: { allowedRoles: string[] }) => {
 }
 
 function App() {
-  const { checkAuth, isCheckingAuth } = useAuthStore();
+  const { checkAuth, isCheckingAuth, logout } = useAuthStore();
 
   // Check authentication status on app load
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    async function verifyAuth() {
+      console.log(import.meta.env.MODE)
+      try {
+        await checkAuth();
+      } catch (error) {
+        if (import.meta.env.MODE === 'development') {
+          console.error('Auth check failed:', error);
+        }
+        await logout();
+      }
+    };
+    verifyAuth();
+  }, [checkAuth, logout]);
 
   if (isCheckingAuth) {
     return <LoadingSpinner />

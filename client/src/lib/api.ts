@@ -1,7 +1,7 @@
+import { useAuthStore } from '../store/authStore';
 // API configuration and helper functions
 // const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v0';
 const API_BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/api/v0" : "/api/v0";
-
 interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
@@ -273,6 +273,13 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle 401 Unauthorized response by logging out the user
+        if (response.status === 401) {
+          const auth = useAuthStore.getState();
+          await auth.logout();
+          throw new Error('Your session has expired. Please log in again.');
+        }
+
         // Don't log 404 errors for certain endpoints in development to avoid console spam
         const is404 = response.status === 404;
         const isShopEndpoint = endpoint.includes('/shops/');

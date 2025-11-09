@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'url';
 // import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -23,6 +24,9 @@ import reportRoutes from './routes/report.route.js';
 // import { verifyToken } from './middlewares/verifyToken.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -78,16 +82,17 @@ if (process.env.NODE_ENV === 'production') {
 app.disable('x-powered-by');
 
 // Enhanced CORS configuration for production
-// const corsOptions = {
-//   origin: process.env.NODE_ENV === 'production'
-//     ? process.env.CORS_ORIGIN || process.env.CLIENT_URL
-//     : process.env.CLIENT_URL || 'http://localhost:5173',
-//   credentials: true,
-//   optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
-// }
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production'
+    ? [process.env.CORS_ORIGIN || process.env.CLIENT_URL || 'http://localhost:5000'].filter(Boolean)
+    : process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true,
+  optionsSuccessStatus: 200
+}
 
-// app.use(cors(corsOptions));
-app.use(cors({ origin: true, credentials: true })); // Allow all origins for testing; restrict in production
+app.use(cors(corsOptions));
+// app.use(cors({origin:true, credentials:true}));
+// app.use(cors({ origin: true, credentials: true })); // Allow all origins for testing; restrict in production
 
 // Enhanced cookie parser with security options for production
 if (process.env.NODE_ENV === 'production') {
@@ -125,12 +130,17 @@ app.use('/api/v0/reports', reportRoutes);
 
 // Serve frontend static files in production
 if (process.env.NODE_ENV === 'production') {
-  const clientDistPath = path.resolve(process.cwd(), 'client', 'dist');
+  console.log(process.env.NODE_ENV);
+  const clientDistPath = path.resolve(__dirname, '..', '..', 'client', 'dist');
+  console.log('Client dist path resolved to:', clientDistPath);
+  console.log('__dirname is:', __dirname);
   app.use(express.static(clientDistPath));
 
   // Catch-all handler: send back React's index.html file for any non-API routes
   app.get(/(.*)/, (_req: Request, res: Response) => {
-    res.sendFile(path.join(clientDistPath, 'index.html'));
+    const indexPath = path.join(clientDistPath, 'index.html');
+    console.log('Trying to serve index.html from:', indexPath);
+    res.sendFile(indexPath);
   });
 } else {
   // Development 404 handler for API routes only
