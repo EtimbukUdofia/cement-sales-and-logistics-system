@@ -44,8 +44,6 @@ Sidebar / UI primitives:
 - DB: MongoDB
 - Testing / tooling: Jest / React Testing Library (recommended), ESLint (see [client/README.md](client/README.md))
 
-Coding conventions and guidelines are captured in the repo: [.github/copilot-instructions.md](.github/copilot-instructions.md)
-
 ---
 
 ## Local Development
