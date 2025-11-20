@@ -270,6 +270,7 @@ export const getSalesDashboardMetrics = async (req: AuthRequest, res: Response) 
 
     const todaysSales = todaysOrders.length;
     const todaysRevenue = todaysOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const todaysCash = todaysOrders.filter(order => order.paymentMethod === 'cash');
 
     // Yesterday's metrics for comparison
     const yesterdaysOrders = await SalesOrder.find({
@@ -364,6 +365,7 @@ export const getSalesDashboardMetrics = async (req: AuthRequest, res: Response) 
       today: {
         sales: todaysSales,
         revenue: todaysRevenue,
+        cash: todaysCash.reduce((sum, order) => sum + order.totalAmount, 0),
         salesChange: Math.round(salesChange * 100) / 100,
         revenueChange: Math.round(revenueChange * 100) / 100
       },

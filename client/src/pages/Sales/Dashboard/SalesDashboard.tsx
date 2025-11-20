@@ -22,6 +22,7 @@ interface DashboardMetrics {
   today: {
     sales: number;
     revenue: number;
+    cash: number;
     salesChange: number;
     revenueChange: number;
   };
@@ -198,6 +199,12 @@ export default function SalesDashboard() {
         <StatCard 
           description="Today's Revenue"
           content={formatCurrency(metrics.today.revenue)}
+          icon={<DollarSign size={28} />}
+          iconBgClassName="bg-yellow-100 text-yellow-600"
+        />
+        <StatCard 
+          description="Today's Cash Sales"
+          content={formatCurrency(metrics.today.cash)}
           icon={<DollarSign size={28} />}
           iconBgClassName="bg-yellow-100 text-yellow-600"
         />
