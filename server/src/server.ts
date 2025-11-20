@@ -90,9 +90,9 @@ const corsOptions = {
   optionsSuccessStatus: 200
 }
 
-// app.use(cors(corsOptions));
+app.use(cors(corsOptions));
 // app.use(cors({origin:true, credentials:true}));
-app.use(cors({ origin: true, credentials: true })); // Allow all origins for testing; restrict in production
+// app.use(cors({ origin: true, credentials: true })); // Allow all origins for testing; restrict in production
 
 // Enhanced cookie parser with security options for production
 if (process.env.NODE_ENV === 'production') {
