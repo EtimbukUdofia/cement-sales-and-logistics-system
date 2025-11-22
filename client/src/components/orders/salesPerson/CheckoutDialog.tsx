@@ -34,6 +34,7 @@ interface CheckoutFormData {
   paymentMethod: 'cash' | 'pos' | 'transfer'
   notes: string
   isDelivery: boolean
+  status: 'Collected' | 'Not Collected'
 }
 
 export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: CheckoutDialogProps) {
@@ -49,7 +50,8 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
     deliveryAddress: "",
     paymentMethod: "cash",
     notes: "",
-    isDelivery: false
+    isDelivery: false,
+    status: "Not Collected"
   })
 
   const [errors, setErrors] = useState<Partial<CheckoutFormData>>({})
@@ -136,7 +138,8 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
         isDelivery: formData.isDelivery,
         onloadingCost: formData.isDelivery ? settings?.onloadingCost : undefined,
         deliveryCost: formData.isDelivery ? settings?.deliveryCost : undefined,
-        offloadingCost: formData.isDelivery ? settings?.offloadingCost : undefined
+        offloadingCost: formData.isDelivery ? settings?.offloadingCost : undefined,
+        status: formData.status
       })
 
       if (result.success) {
@@ -150,7 +153,8 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
           deliveryAddress: "",
           paymentMethod: "cash",
           notes: "",
-          isDelivery: false
+          isDelivery: false,
+          status: "Not Collected"
         })
         setErrors({})
         // Trigger product refresh
@@ -336,6 +340,56 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Collection Status *
+              </Label>
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  { value: 'Collected', label: 'Cement Collected', icon: '✅', description: 'Customer has collected the cement' },
+                  { value: 'Not Collected', label: 'Not Yet Collected', icon: '⏳', description: 'Cement pending collection' }
+                ].map((statusOption) => (
+                  <div
+                    key={statusOption.value}
+                    onClick={() => handleInputChange("status", statusOption.value as 'Collected' | 'Not Collected')}
+                    className={`
+                      p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md
+                      ${formData.status === statusOption.value
+                        ? 'border-green-500 bg-green-50 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{statusOption.icon}</span>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{statusOption.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {statusOption.description}
+                        </p>
+                      </div>
+                      <div className={`
+                        w-5 h-5 rounded-full border-2 flex items-center justify-center
+                        ${formData.status === statusOption.value
+                          ? 'border-green-500 bg-green-500'
+                          : 'border-gray-300'
+                        }
+                      `}>
+                        {formData.status === statusOption.value && (
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {formData.status === 'Not Collected' && (
+                <p className="text-xs text-orange-600 bg-orange-50 p-2 rounded border border-orange-200">
+                  ℹ️ This cement will not be deducted from inventory until marked as collected.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

@@ -24,6 +24,8 @@ import SalesHistoryPage from './pages/Sales/Reports/SalesHistoryPage'
 import ShopsPage from './pages/Admin/Shops/ShopsPage'
 import ShopInventoryPage from './pages/Admin/ShopInventory/ShopInventoryPage'
 import SalesDashboard from './pages/Sales/Dashboard/SalesDashboard'
+import CementNotCollectedPage from './pages/Sales/CementNotCollected/CementNotCollectedPage'
+import OrderCorrectionsPage from './pages/Admin/Corrections/OrderCorrectionsPage'
 
 const ProtectedRoute = () => {
   const { isAuthenticated } = useAuthStore();
@@ -104,6 +106,7 @@ function App() {
             {/* <Route path="routes" element={<RoutesPage />} /> */}
             {/* <Route path="trucks" element={<TrucksPage />} /> */}
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="corrections" element={<OrderCorrectionsPage />} />
             <Route path="user-roles" element={<UserManagementPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
@@ -116,6 +119,7 @@ function App() {
             {/* <Route path="customers" element={<div>Manage Customers Page</div>} /> */}
             <Route path="orders" element={<SalesOrdersPage />} />
             <Route path="inventory" element={<SalesInventoryPage />} />
+            <Route path="not-collected" element={<CementNotCollectedPage />} />
             <Route path="history" element={<SalesHistoryPage />} />
             {/* <Route path="deliveries" element={<div>Manage Deliveries Page</div>} /> */}
             {/* <Route path="invoices" element={<div>Manage Invoices Page</div>} />

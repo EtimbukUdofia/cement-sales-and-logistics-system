@@ -243,7 +243,9 @@ export const createSalesOrder = async (req: AuthRequest, res: Response): Promise
   // i can check for tmpering and log by comparing cmoputed total and totalAmount from the client and then log the suspicious activity
 
   try {
-    // Check and reduce inventory before creating the sales order
+    // Always reduce inventory at order creation (customer has paid, cement belongs to them)
+    const initialStatus = req.body.status || 'Not Collected';
+
     const inventoryResult = await reduceInventoryQuantities(shop, items);
 
     if (!inventoryResult.success) {
@@ -259,16 +261,23 @@ export const createSalesOrder = async (req: AuthRequest, res: Response): Promise
       }
     }
 
-    // Create the sales order after successful inventory reduction
+    // Create the sales order with collectedQuantity initialized
+    const itemsWithCollection = items.map(item => ({
+      ...item,
+      collectedQuantity: initialStatus === 'Collected' ? item.quantity : 0
+    }));
+
     const newSalesOrder = new SalesOrder({
       ...req.body,
-      status: 'Pending',
+      items: itemsWithCollection,
+      status: initialStatus,
       totalAmount: finalTotal,
       salesPerson: req.userId,
       isDelivery: deliveryData.isDelivery,
       onloadingCost: deliveryData.onloadingCost,
       deliveryCost: deliveryData.deliveryCost,
-      offloadingCost: deliveryData.offloadingCost
+      offloadingCost: deliveryData.offloadingCost,
+      collectedDate: initialStatus === 'Collected' ? new Date() : null
     });
     const result = await newSalesOrder.save();
 
@@ -297,11 +306,11 @@ export const createSalesOrder = async (req: AuthRequest, res: Response): Promise
   }
 };
 
-// update sales order status (e.g., Pending, Completed, Cancelled, Delivered)
+// update sales order status (e.g., Collected, Not Collected, Pending Correction)
 export const updateSalesOrderStatus = async (req: AuthRequest, res: Response): Promise<void> => {
   const { id } = req.params;
   const { status } = req.body;
-  const allowedStatuses = ['Pending', 'Completed', 'Cancelled', 'Delivered'];
+  const allowedStatuses = ['Collected', 'Not Collected', 'Pending Correction'];
 
   if (!id) {
     res.status(400).json({ success: false, message: 'Sales order id is required' });
@@ -326,29 +335,25 @@ export const updateSalesOrderStatus = async (req: AuthRequest, res: Response): P
       return;
     }
 
-    // Check if order is being cancelled and was previously not cancelled
-    const isCancelling = status === 'Cancelled' && currentOrder.status !== 'Cancelled';
-
-    // If cancelling the order, restore inventory
-    if (isCancelling) {
-      try {
-        const itemsForInventory = Array.from(currentOrder.items).map(item => ({
-          product: item.product.toString(),
-          quantity: item.quantity
-        }));
-        await restoreInventoryQuantities(currentOrder.shop.toString(), itemsForInventory);
-      } catch (inventoryError) {
-        res.status(500).json({
-          success: false,
-          message: 'Failed to restore inventory when cancelling order'
-        });
-        return;
-      }
-    }
-
+    // Update collected quantities and status
     const update: any = { status };
-    // set deliveredDate when status is Delivered, otherwise clear it
-    update.deliveredDate = status === 'Delivered' ? new Date() : null;
+
+    if (status === 'Collected') {
+      // Mark all items as fully collected
+      update.collectedDate = new Date();
+
+      // Update each item's collectedQuantity to match quantity
+      const updatedItems = currentOrder.items.map((item: any) => ({
+        product: item.product,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        collectedQuantity: item.quantity
+      }));
+      update.items = updatedItems;
+    } else {
+      update.collectedDate = null;
+    }
 
     const updated = await SalesOrder.findByIdAndUpdate(id, update, { new: true })
       .populate('customer')
@@ -361,11 +366,7 @@ export const updateSalesOrderStatus = async (req: AuthRequest, res: Response): P
       return;
     }
 
-    const message = isCancelling
-      ? 'Sales order cancelled and inventory restored successfully'
-      : 'Sales order status updated successfully';
-
-    res.status(200).json({ success: true, message, salesOrder: updated });
+    res.status(200).json({ success: true, message: 'Sales order status updated successfully', salesOrder: updated });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error updating sales order status' });
   }
@@ -394,8 +395,8 @@ export const deleteSalesOrder = async (req: AuthRequest, res: Response): Promise
       return;
     }
 
-    // Restore inventory if the order wasn't already cancelled
-    if (salesOrder.status !== 'Cancelled') {
+    // Restore inventory if the order was collected
+    if (salesOrder.status === 'Collected') {
       try {
         const itemsForInventory = Array.from(salesOrder.items).map(item => ({
           product: item.product.toString(),
@@ -475,5 +476,336 @@ export const getSalesOrdersByShop = async (req: AuthRequest, res: Response): Pro
     res.status(200).json({ success: true, salesOrders });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error fetching sales orders for shop' });
+  }
+};
+
+// Flag an order for correction
+export const flagOrderForCorrection = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const { correctionNotes } = req.body;
+
+  if (!id) {
+    res.status(400).json({ success: false, message: 'Sales order id is required' });
+    return;
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ success: false, message: 'Invalid sales order id' });
+    return;
+  }
+
+  if (!correctionNotes || typeof correctionNotes !== 'string' || correctionNotes.trim() === '') {
+    res.status(400).json({ success: false, message: 'Correction notes are required' });
+    return;
+  }
+
+  try {
+    const updated = await SalesOrder.findByIdAndUpdate(
+      id,
+      {
+        status: 'Pending Correction',
+        needsCorrection: true,
+        correctionNotes: correctionNotes.trim(),
+        correctionRequestedAt: new Date(),
+        correctionRequestedBy: req.userId
+      },
+      { new: true }
+    )
+      .populate('customer')
+      .populate('shop')
+      .populate('items.product')
+      .populate('correctionRequestedBy', 'username email')
+      .lean();
+
+    if (!updated) {
+      res.status(404).json({ success: false, message: 'Sales order not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Order flagged for correction successfully',
+      salesOrder: updated
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error flagging order for correction' });
+  }
+};
+
+// Get all orders needing correction (Admin)
+export const getOrdersNeedingCorrection = async (_req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const orders = await SalesOrder.find({ needsCorrection: true, status: 'Pending Correction' })
+      .populate('customer')
+      .populate('shop')
+      .populate('items.product')
+      .populate('salesPerson', 'username email')
+      .populate('correctionRequestedBy', 'username email')
+      .sort({ correctionRequestedAt: -1 })
+      .lean();
+
+    res.status(200).json({ success: true, orders, totalCount: orders.length });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error fetching orders needing correction' });
+  }
+};
+
+// Get not collected orders (Sales Person)
+export const getNotCollectedOrders = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    // Optionally filter by shop if provided
+    const filter: any = { status: 'Not Collected' };
+
+    // If sales person, filter by their shop
+    if (req.query.shopId) {
+      filter.shop = req.query.shopId;
+    }
+
+    const orders = await SalesOrder.find(filter)
+      .populate('customer')
+      .populate('shop')
+      .populate('items.product')
+      .populate('salesPerson', 'username email')
+      .sort({ orderDate: -1 })
+      .lean();
+
+    // Calculate total cement not collected (remaining quantities only)
+    let totalBags = 0;
+    let totalValue = 0;
+
+    for (const order of orders) {
+      // Calculate remaining bags (ordered - collected)
+      const orderBags = order.items.reduce((sum: number, item: any) => {
+        const remaining = item.quantity - (item.collectedQuantity || 0);
+        return sum + remaining;
+      }, 0);
+
+      // Calculate remaining value proportionally
+      const orderRemainingValue = order.items.reduce((sum: number, item: any) => {
+        const remaining = item.quantity - (item.collectedQuantity || 0);
+        const proportionalValue = (remaining / item.quantity) * item.totalPrice;
+        return sum + proportionalValue;
+      }, 0);
+
+      // Add delivery costs if it's a delivery order
+      const deliveryCosts = order.isDelivery
+        ? (order.onloadingCost || 0) + (order.deliveryCost || 0) + (order.offloadingCost || 0)
+        : 0;
+
+      totalBags += orderBags;
+      totalValue += orderRemainingValue + deliveryCosts;
+    }
+
+    res.status(200).json({
+      success: true,
+      orders,
+      totalCount: orders.length,
+      totalBags,
+      totalValue
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error fetching not collected orders' });
+  }
+};
+
+// Resolve correction (Admin can edit and mark as resolved)
+export const resolveOrderCorrection = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const { status, items, ...updateData } = req.body;
+
+  if (!id) {
+    res.status(400).json({ success: false, message: 'Sales order id is required' });
+    return;
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ success: false, message: 'Invalid sales order id' });
+    return;
+  }
+
+  try {
+    const currentOrder = await SalesOrder.findById(id).lean();
+    if (!currentOrder) {
+      res.status(404).json({ success: false, message: 'Sales order not found' });
+      return;
+    }
+
+    // If items were changed and order was previously collected, adjust inventory
+    if (items && currentOrder.status === 'Collected') {
+      const oldItems = currentOrder.items;
+
+      // First, restore old inventory (add back what was deducted)
+      for (const oldItem of oldItems) {
+        await Inventory.findOneAndUpdate(
+          {
+            product: oldItem.product,
+            shop: currentOrder.shop
+          },
+          {
+            $inc: { quantity: oldItem.quantity }
+          }
+        );
+      }
+
+      // Then, deduct new inventory (if still collected)
+      const newStatus = status || currentOrder.status;
+      if (newStatus === 'Collected') {
+        for (const newItem of items) {
+          const inventory = await Inventory.findOne({
+            product: newItem.product,
+            shop: currentOrder.shop
+          });
+
+          if (!inventory || inventory.quantity < newItem.quantity) {
+            res.status(400).json({
+              success: false,
+              message: `Insufficient inventory for updated product`
+            });
+            return;
+          }
+
+          await Inventory.findOneAndUpdate(
+            {
+              product: newItem.product,
+              shop: currentOrder.shop
+            },
+            {
+              $inc: { quantity: -newItem.quantity }
+            }
+          );
+        }
+      }
+    }
+
+    // Clear correction flags and update
+    const update: any = {
+      ...updateData,
+      needsCorrection: false,
+      correctionNotes: null,
+      status: status || 'Not Collected' // Default to Not Collected after correction
+    };
+
+    // Include items if provided
+    if (items) {
+      update.items = items;
+
+      // Recalculate totalAmount if items changed
+      if (!updateData.totalAmount) {
+        const itemsTotal = items.reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0);
+        const deliveryCosts = (currentOrder.onloadingCost || 0) + (currentOrder.deliveryCost || 0) + (currentOrder.offloadingCost || 0);
+        update.totalAmount = itemsTotal + deliveryCosts;
+      }
+    }
+
+    const updated = await SalesOrder.findByIdAndUpdate(id, update, { new: true })
+      .populate('customer')
+      .populate('shop')
+      .populate('items.product')
+      .populate('salesPerson', 'username email')
+      .lean();
+
+    if (!updated) {
+      res.status(404).json({ success: false, message: 'Sales order not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Order correction resolved successfully',
+      salesOrder: updated
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error resolving order correction' });
+  }
+};
+
+// Record partial collection of cement
+export const recordPartialCollection = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const { collections } = req.body; // Array of { productId, quantityCollected }
+
+  if (!id) {
+    res.status(400).json({ success: false, message: 'Sales order id is required' });
+    return;
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ success: false, message: 'Invalid sales order id' });
+    return;
+  }
+
+  if (!Array.isArray(collections) || collections.length === 0) {
+    res.status(400).json({ success: false, message: 'Collections array is required' });
+    return;
+  }
+
+  try {
+    const order = await SalesOrder.findById(id);
+    if (!order) {
+      res.status(404).json({ success: false, message: 'Sales order not found' });
+      return;
+    }
+
+    if (order.status === 'Collected') {
+      res.status(400).json({ success: false, message: 'Order is already fully collected' });
+      return;
+    }
+
+    // Update collected quantities for each item
+    let allFullyCollected = true;
+    const updatedItems = order.items.map((item: any) => {
+      const collection = collections.find(c => c.productId === item.product.toString());
+
+      if (collection) {
+        const currentCollected = item.collectedQuantity || 0;
+        const newCollected = Math.min(currentCollected + collection.quantityCollected, item.quantity);
+
+        if (newCollected < item.quantity) {
+          allFullyCollected = false;
+        }
+
+        return {
+          ...item.toObject(),
+          collectedQuantity: newCollected
+        };
+      }
+
+      if ((item.collectedQuantity || 0) < item.quantity) {
+        allFullyCollected = false;
+      }
+
+      return item.toObject();
+    });
+
+    // Update order with new collected quantities
+    const update: any = {
+      items: updatedItems
+    };
+
+    // If all items are fully collected, update status
+    if (allFullyCollected) {
+      update.status = 'Collected';
+      update.collectedDate = new Date();
+    }
+
+    const updated = await SalesOrder.findByIdAndUpdate(id, update, { new: true })
+      .populate('customer')
+      .populate('shop')
+      .populate('items.product')
+      .populate('salesPerson', 'username email')
+      .lean();
+
+    if (!updated) {
+      res.status(404).json({ success: false, message: 'Sales order not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: allFullyCollected ? 'All items collected successfully' : 'Partial collection recorded successfully',
+      salesOrder: updated
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error recording partial collection' });
   }
 };

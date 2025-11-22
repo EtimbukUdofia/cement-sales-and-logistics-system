@@ -28,6 +28,7 @@ interface SalesOrderData {
   salesPerson: string;
   deliveryAddress?: string;
   notes?: string;
+  status?: 'Collected' | 'Not Collected' | 'Pending Correction';
 }
 
 interface SettingsData {
@@ -676,6 +677,30 @@ class ApiClient {
     return this.request<{ settings: SettingsData; message: string }>('/settings', {
       method: 'PUT',
       body: JSON.stringify(data),
+      ...options,
+    });
+  }
+
+  // Generic HTTP methods for custom requests
+  async get<T = unknown>(endpoint: string, options?: RequestInit) {
+    return this.request<T>(endpoint, {
+      method: 'GET',
+      ...options,
+    });
+  }
+
+  async put<T = unknown>(endpoint: string, data?: unknown, options?: RequestInit) {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+      ...options,
+    });
+  }
+
+  async post<T = unknown>(endpoint: string, data?: unknown, options?: RequestInit) {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
       ...options,
     });
   }

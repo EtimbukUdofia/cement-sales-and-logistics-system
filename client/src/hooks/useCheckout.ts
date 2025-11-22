@@ -16,6 +16,7 @@ interface CheckoutData {
   onloadingCost?: number;
   deliveryCost?: number;
   offloadingCost?: number;
+  status?: 'Collected' | 'Not Collected';
 }
 
 interface Customer {
@@ -123,7 +124,8 @@ export function useCheckout() {
         paymentMethod: checkoutData.paymentMethod,
         salesPerson: user.id,
         deliveryAddress: checkoutData.deliveryAddress,
-        notes: checkoutData.notes
+        notes: checkoutData.notes,
+        status: checkoutData.status || 'Not Collected'
       };
 
       // Create the order

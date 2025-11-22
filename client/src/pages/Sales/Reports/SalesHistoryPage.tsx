@@ -6,6 +6,13 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Textarea } from "@/components/ui/textarea"
 import { CalendarDateRangePicker } from "@/components/reports"
 import { apiClient } from "@/lib/api"
 import { toast } from "sonner"
@@ -19,7 +26,10 @@ import {
   ChevronRight,
   Eye,
   FileText,
-  Clock
+  Clock,
+  AlertCircle,
+  Flag,
+  MoreVertical
 } from "lucide-react"
 
 interface SalesOrder {
@@ -56,11 +66,13 @@ interface SalesOrder {
   offloadingCost?: number;
   totalAmount: number;
   paymentMethod: 'cash' | 'pos' | 'transfer';
-  status: 'Pending' | 'Confirmed' | 'Delivered' | 'Cancelled';
+  status: 'Collected' | 'Not Collected' | 'Pending Correction';
   orderDate: string;
   deliveryDate?: string;
   deliveryAddress?: string;
   notes?: string;
+  needsCorrection?: boolean;
+  correctionNotes?: string;
 }
 
 interface SalesHistoryData {
@@ -104,6 +116,9 @@ export default function SalesHistoryPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [salesData, setSalesData] = useState<SalesHistoryData | null>(null)
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null)
+  const [flagDialogOpen, setFlagDialogOpen] = useState(false)
+  const [orderToFlag, setOrderToFlag] = useState<SalesOrder | null>(null)
+  const [correctionNotes, setCorrectionNotes] = useState('')
 
   const fetchSalesHistory = useCallback(async () => {
     setIsLoading(true)
@@ -178,14 +193,14 @@ export default function SalesHistoryPage() {
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'Confirmed':
-        return 'bg-blue-100 text-blue-800'
-      case 'Delivered':
+      case 'Collected':
         return 'bg-green-100 text-green-800'
-      case 'Cancelled':
+      case 'Not Collected':
+        return 'bg-orange-100 text-orange-800'
+      case 'Pending Correction':
         return 'bg-red-100 text-red-800'
       default:
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-gray-100 text-gray-800'
     }
   }
 
@@ -199,6 +214,31 @@ export default function SalesHistoryPage() {
         return '🏦'
       default:
         return '💰'
+    }
+  }
+
+  const handleFlagForCorrection = async () => {
+    if (!orderToFlag || !correctionNotes.trim()) {
+      toast.error('Please provide correction notes')
+      return
+    }
+
+    try {
+      const response = await apiClient.put(`/sales-orders/${orderToFlag._id}/flag-correction`, {
+        correctionNotes: correctionNotes.trim()
+      })
+
+      if (response.success) {
+        toast.success('Order flagged for correction successfully')
+        setFlagDialogOpen(false)
+        setOrderToFlag(null)
+        setCorrectionNotes('')
+        fetchSalesHistory()
+      } else {
+        toast.error('Failed to flag order for correction')
+      }
+    } catch {
+      toast.error('Failed to flag order for correction')
     }
   }
 
@@ -321,10 +361,9 @@ export default function SalesHistoryPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Confirmed">Confirmed</SelectItem>
-                  <SelectItem value="Delivered">Delivered</SelectItem>
-                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                  <SelectItem value="Collected">Collected</SelectItem>
+                  <SelectItem value="Not Collected">Not Collected</SelectItem>
+                  <SelectItem value="Pending Correction">Pending Correction</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -475,13 +514,30 @@ export default function SalesHistoryPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedOrder(order)}
-                          >
-                            <Eye size={16} />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical size={16} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setSelectedOrder(order)}>
+                                <Eye size={16} className="mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              {!order.needsCorrection && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setOrderToFlag(order)
+                                    setFlagDialogOpen(true)
+                                  }}
+                                >
+                                  <Flag size={16} className="mr-2" />
+                                  Flag for Correction
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -540,6 +596,18 @@ export default function SalesHistoryPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {selectedOrder.needsCorrection && selectedOrder.correctionNotes && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-medium text-red-900">Correction Needed</p>
+                      <p className="text-sm text-red-800 mt-1">{selectedOrder.correctionNotes}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium">Customer</Label>
@@ -638,6 +706,87 @@ export default function SalesHistoryPage() {
                   <span>Total Amount</span>
                   <span>{formatCurrency(selectedOrder.totalAmount)}</span>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Flag for Correction Dialog */}
+      {flagDialogOpen && orderToFlag && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Flag size={20} className="text-orange-600" />
+                  Flag Order for Correction
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFlagDialogOpen(false)
+                    setOrderToFlag(null)
+                    setCorrectionNotes('')
+                  }}
+                >
+                  ✕
+                </Button>
+              </div>
+              <CardDescription>
+                Order: {orderToFlag.orderNumber}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Customer</Label>
+                <p className="text-sm">{orderToFlag.customer.name}</p>
+                <p className="text-xs text-muted-foreground">{orderToFlag.customer.company}</p>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Order Details</Label>
+                <div className="text-sm space-y-1">
+                  <p>Total: <span className="font-bold">{formatCurrency(orderToFlag.totalAmount)}</span></p>
+                  <p>Status: <Badge className={getStatusBadgeColor(orderToFlag.status)}>{orderToFlag.status}</Badge></p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Correction Notes *</Label>
+                <Textarea
+                  placeholder="Describe what needs to be corrected..."
+                  value={correctionNotes}
+                  onChange={(e) => setCorrectionNotes(e.target.value)}
+                  rows={4}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Please provide detailed information about what needs to be corrected
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFlagDialogOpen(false)
+                    setOrderToFlag(null)
+                    setCorrectionNotes('')
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleFlagForCorrection}
+                  disabled={!correctionNotes.trim()}
+                  className="flex-1"
+                >
+                  <Flag size={16} className="mr-2" />
+                  Flag Order
+                </Button>
               </div>
             </CardContent>
           </Card>

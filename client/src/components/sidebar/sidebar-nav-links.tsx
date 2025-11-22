@@ -1,5 +1,5 @@
 import { NavLink } from "react-router";
-import { LayoutDashboard, Package, Truck, ShoppingCart, Boxes, Store, BarChart2, Users, Warehouse, Settings } from "lucide-react";
+import { LayoutDashboard, Package, Truck, ShoppingCart, Boxes, Store, BarChart2, Users, Warehouse, Settings, AlertTriangle, PackageX } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 
 export function SidebarNavLinks() {
@@ -17,6 +17,7 @@ export function SidebarNavLinks() {
     { to: "/admin/shops", icon: Store, label: "Shops" },
     // { to: "/admin/trucks", icon: Truck, label: "Trucks" },
     { to: "/admin/reports", icon: BarChart2, label: "Reports" },
+    { to: "/admin/corrections", icon: AlertTriangle, label: "Corrections" },
     { to: "/admin/user-roles", icon: Users, label: "User Roles" },
     { to: "/admin/settings", icon: Settings, label: "Settings" },
   ];
@@ -26,6 +27,7 @@ export function SidebarNavLinks() {
     // { to: "/sales/customers", icon: Users, label: "Customers" },
     { to: "/sales/orders", icon: ShoppingCart, label: "Orders" },
     { to: "/sales/inventory", icon: Warehouse, label: "Inventory" },
+    { to: "/sales/not-collected", icon: PackageX, label: "Not Collected" },
     // { to: "/sales/deliveries", icon: Truck, label: "Deliveries" },
     // { to: "/sales/invoices", icon: Package, label: "Invoices" },
     // { to: "/sales/payments", icon: Store, label: "Payments" },
