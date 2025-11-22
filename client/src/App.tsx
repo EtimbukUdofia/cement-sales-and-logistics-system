@@ -13,6 +13,7 @@ import ProductsPage from './pages/Admin/Products'
 import SuppliersPage from './pages/Admin/Suppliers'
 // import OrdersPage from './pages/Admin/Orders'
 import UserManagementPage from './pages/Admin/UserManagement'
+import SettingsPage from './pages/Admin/Settings'
 import InventoryPage from './pages/Admin/Inventory/InventoryPage'
 // import RoutesPage from './pages/Admin/Routes/RoutesPage'
 // import TrucksPage from './pages/Admin/Trucks/TrucksPage'
@@ -104,6 +105,7 @@ function App() {
             {/* <Route path="trucks" element={<TrucksPage />} /> */}
             <Route path="reports" element={<ReportsPage />} />
             <Route path="user-roles" element={<UserManagementPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Route>
 

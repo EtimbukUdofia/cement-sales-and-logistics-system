@@ -21,6 +21,7 @@ import salesOrderRoutes from './routes/salesOrder.route.js';
 import supplierRoutes from './routes/supplier.route.js';
 import purchaseOrderRoutes from './routes/purchaseOrder.route.js';
 import reportRoutes from './routes/report.route.js';
+import settingsRoutes from './routes/settings.route.js';
 // import { verifyToken } from './middlewares/verifyToken.js';
 
 dotenv.config();
@@ -82,17 +83,17 @@ if (process.env.NODE_ENV === 'production') {
 app.disable('x-powered-by');
 
 // Enhanced CORS configuration for production
-const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
-    ? [process.env.CORS_ORIGIN || process.env.CLIENT_URL || 'http://localhost:5000'].filter(Boolean)
-    : process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true,
-  optionsSuccessStatus: 200
-}
+// const corsOptions = {
+//   origin: process.env.NODE_ENV === 'production'
+//     ? [process.env.CORS_ORIGIN || process.env.CLIENT_URL || 'http://localhost:5000'].filter(Boolean)
+//     : process.env.CLIENT_URL || 'http://localhost:5173',
+//   credentials: true,
+//   optionsSuccessStatus: 200
+// }
 
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 // app.use(cors({origin:true, credentials:true}));
-// app.use(cors({ origin: true, credentials: true })); // Allow all origins for testing; restrict in production
+app.use(cors({ origin: true, credentials: true })); // Allow all origins for testing; restrict in production
 
 // Enhanced cookie parser with security options for production
 if (process.env.NODE_ENV === 'production') {
@@ -127,6 +128,7 @@ app.use('/api/v0/sales-orders', salesOrderRoutes);
 // app.use('/api/v0/routes', require('./routes/route.route.js').default);
 // app.use('/api/v0/deliveries', require('./routes/delivery.route.js').default);
 app.use('/api/v0/reports', reportRoutes);
+app.use('/api/v0/settings', settingsRoutes);
 
 // Serve frontend static files in production
 if (process.env.NODE_ENV === 'production') {

@@ -7,14 +7,20 @@ const salesOrderSchema = new mongoose.Schema({
 
   shop: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true }, // Reference to Shop model
 
-  items: [{ 
+  items: [{
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true }, // Reference to Product model
     quantity: { type: Number, required: true }, // Quantity ordered
     unitPrice: { type: Number, required: true }, // Price per unit
     totalPrice: { type: Number, required: true } // Total price for the item
   }], // List
-  
-  totalAmount: { type: Number, required: true }, // Total amount for the order
+
+  // Delivery and additional costs
+  isDelivery: { type: Boolean, default: false }, // Whether order includes delivery
+  onloadingCost: { type: Number, default: 0 }, // Cost for onloading
+  deliveryCost: { type: Number, default: 0 }, // Cost for delivery
+  offloadingCost: { type: Number, default: 0 }, // Cost for offloading
+
+  totalAmount: { type: Number, required: true }, // Total amount for the order (includes items + additional costs)
 
   paymentMethod: { type: String, enum: ['cash', 'pos', 'transfer'], required: true }, // Payment method
 

@@ -1,5 +1,5 @@
 import { NavLink } from "react-router";
-import { LayoutDashboard, Package, Truck, ShoppingCart, Boxes, Store, BarChart2, Users, Warehouse } from "lucide-react";
+import { LayoutDashboard, Package, Truck, ShoppingCart, Boxes, Store, BarChart2, Users, Warehouse, Settings } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 
 export function SidebarNavLinks() {
@@ -18,6 +18,7 @@ export function SidebarNavLinks() {
     // { to: "/admin/trucks", icon: Truck, label: "Trucks" },
     { to: "/admin/reports", icon: BarChart2, label: "Reports" },
     { to: "/admin/user-roles", icon: Users, label: "User Roles" },
+    { to: "/admin/settings", icon: Settings, label: "Settings" },
   ];
 
   const salesPersonNavItems = [

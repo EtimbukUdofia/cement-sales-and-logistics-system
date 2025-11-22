@@ -12,6 +12,10 @@ interface CheckoutData {
   deliveryAddress?: string;
   paymentMethod: 'cash' | 'pos' | 'transfer';
   notes?: string;
+  isDelivery?: boolean;
+  onloadingCost?: number;
+  deliveryCost?: number;
+  offloadingCost?: number;
 }
 
 interface Customer {
@@ -86,8 +90,19 @@ export function useCheckout() {
       // Generate unique order number
       const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      // Calculate total amount
-      const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      // Calculate total amount including additional costs
+      let totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+      // Calculate total bags
+      const totalBags = items.reduce((sum, item) => sum + item.quantity, 0);
+
+      // Add delivery costs if applicable (costs are per bag)
+      if (checkoutData.isDelivery && totalBags > 0) {
+        const onloadingTotal = (checkoutData.onloadingCost || 0) * totalBags;
+        const deliveryTotal = (checkoutData.deliveryCost || 0) * totalBags;
+        const offloadingTotal = (checkoutData.offloadingCost || 0) * totalBags;
+        totalAmount += onloadingTotal + deliveryTotal + offloadingTotal;
+      }
 
       // Prepare order data
       const orderData: SalesOrderData = {
@@ -100,6 +115,10 @@ export function useCheckout() {
           unitPrice: item.price,
           totalPrice: item.price * item.quantity
         })),
+        isDelivery: checkoutData.isDelivery,
+        onloadingCost: checkoutData.isDelivery ? checkoutData.onloadingCost : undefined,
+        deliveryCost: checkoutData.isDelivery ? checkoutData.deliveryCost : undefined,
+        offloadingCost: checkoutData.isDelivery ? checkoutData.offloadingCost : undefined,
         totalAmount,
         paymentMethod: checkoutData.paymentMethod,
         salesPerson: user.id,

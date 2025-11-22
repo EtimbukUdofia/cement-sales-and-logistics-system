@@ -19,11 +19,31 @@ interface SalesOrderData {
     unitPrice: number;
     totalPrice: number;
   }>;
+  isDelivery?: boolean;
+  onloadingCost?: number;
+  deliveryCost?: number;
+  offloadingCost?: number;
   totalAmount: number;
   paymentMethod: 'cash' | 'pos' | 'transfer';
   salesPerson: string;
   deliveryAddress?: string;
   notes?: string;
+}
+
+interface SettingsData {
+  _id: string;
+  onloadingCost: number;
+  deliveryCost: number;
+  offloadingCost: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface UpdateSettingsData {
+  onloadingCost?: number;
+  deliveryCost?: number;
+  offloadingCost?: number;
 }
 
 interface CustomerData {
@@ -646,6 +666,19 @@ class ApiClient {
   async getPurchaseOrderStats(options?: RequestInit) {
     return this.request<PurchaseOrderStatsData>('/purchase-orders/stats', options);
   }
+
+  // Settings API methods
+  async getSettings(options?: RequestInit) {
+    return this.request<{ settings: SettingsData }>('/settings', options);
+  }
+
+  async updateSettings(data: UpdateSettingsData, options?: RequestInit) {
+    return this.request<{ settings: SettingsData; message: string }>('/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      ...options,
+    });
+  }
 }
 
 // Export a default instance
@@ -671,5 +704,7 @@ export type {
   PurchaseOrderData,
   CreatePurchaseOrderData,
   UpdatePurchaseOrderData,
-  PurchaseOrderStatsData
+  PurchaseOrderStatsData,
+  SettingsData,
+  UpdateSettingsData
 };

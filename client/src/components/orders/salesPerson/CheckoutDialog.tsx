@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,10 +13,12 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import { useCartStore } from "@/store/cartStore"
 import { useCheckout } from "@/hooks/useCheckout"
+import { apiClient } from "@/lib/api"
 import { toast } from "sonner"
-import { ShoppingCart, User, CreditCard, MapPin, FileText } from "lucide-react"
+import { ShoppingCart, User, CreditCard, MapPin, FileText, Truck } from "lucide-react"
 
 interface CheckoutDialogProps {
   open: boolean
@@ -31,6 +33,7 @@ interface CheckoutFormData {
   deliveryAddress: string
   paymentMethod: 'cash' | 'pos' | 'transfer'
   notes: string
+  isDelivery: boolean
 }
 
 export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: CheckoutDialogProps) {
@@ -45,10 +48,38 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
     customerEmail: "",
     deliveryAddress: "",
     paymentMethod: "cash",
-    notes: ""
+    notes: "",
+    isDelivery: false
   })
 
   const [errors, setErrors] = useState<Partial<CheckoutFormData>>({})
+  const [settings, setSettings] = useState<{ onloadingCost: number; deliveryCost: number; offloadingCost: number } | null>(null)
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true)
+
+  // Fetch settings on component mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await apiClient.getSettings()
+        if (response.success && response.settings) {
+          setSettings({
+            onloadingCost: response.settings.onloadingCost,
+            deliveryCost: response.settings.deliveryCost,
+            offloadingCost: response.settings.offloadingCost
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error)
+        toast.error('Failed to load delivery pricing')
+      } finally {
+        setIsLoadingSettings(false)
+      }
+    }
+
+    if (open) {
+      fetchSettings()
+    }
+  }, [open])
 
   const validateForm = (): boolean => {
     const newErrors: Partial<CheckoutFormData> = {}
@@ -101,7 +132,11 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
         customerEmail: formData.customerEmail || undefined,
         deliveryAddress: formData.deliveryAddress,
         paymentMethod: formData.paymentMethod,
-        notes: formData.notes || undefined
+        notes: formData.notes || undefined,
+        isDelivery: formData.isDelivery,
+        onloadingCost: formData.isDelivery ? settings?.onloadingCost : undefined,
+        deliveryCost: formData.isDelivery ? settings?.deliveryCost : undefined,
+        offloadingCost: formData.isDelivery ? settings?.offloadingCost : undefined
       })
 
       if (result.success) {
@@ -114,7 +149,8 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
           customerEmail: "",
           deliveryAddress: "",
           paymentMethod: "cash",
-          notes: ""
+          notes: "",
+          isDelivery: false
         })
         setErrors({})
         // Trigger product refresh
@@ -126,7 +162,13 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
   }
 
   const totalItems = getTotalItems()
-  const totalPrice = getTotalPrice()
+  const subtotalPrice = getTotalPrice()
+
+  // Calculate additional costs per bag
+  const additionalCosts = formData.isDelivery && settings ?
+    (settings.onloadingCost + settings.deliveryCost + settings.offloadingCost) * totalItems : 0
+
+  const totalPrice = subtotalPrice + additionalCosts
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -207,6 +249,43 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
               />
               {errors.deliveryAddress && (
                 <p className="text-sm text-red-500">{errors.deliveryAddress}</p>
+              )}
+            </div>
+
+            <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Truck size={18} className="text-blue-600" />
+                  <Label htmlFor="isDelivery" className="text-base font-medium cursor-pointer">
+                    Include Delivery Services
+                  </Label>
+                </div>
+                <Switch
+                  id="isDelivery"
+                  checked={formData.isDelivery}
+                  onCheckedChange={(checked) => handleInputChange("isDelivery", checked as any)}
+                  disabled={isLoadingSettings}
+                />
+              </div>
+
+              {formData.isDelivery && settings && (
+                <div className="space-y-2 pl-7 pt-2">
+                  <p className="text-sm text-muted-foreground">Delivery services (per bag × {totalItems} bags):</p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>• Onloading (₦{settings.onloadingCost}/bag)</span>
+                      <span className="font-medium">₦{(settings.onloadingCost * totalItems).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>• Delivery (₦{settings.deliveryCost}/bag)</span>
+                      <span className="font-medium">₦{(settings.deliveryCost * totalItems).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>• Offloading (₦{settings.offloadingCost}/bag)</span>
+                      <span className="font-medium">₦{(settings.offloadingCost * totalItems).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 
@@ -316,12 +395,30 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Subtotal ({totalItems} items):</span>
-                <span>₦{totalPrice.toLocaleString()}</span>
+                <span>₦{subtotalPrice.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span>Delivery Fee:</span>
-                <span>₦0</span>
-              </div>
+
+              {formData.isDelivery && settings && (
+                <>
+                  <Separator className="my-2" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Delivery Charges ({totalItems} bags):</p>
+                    <div className="flex justify-between text-sm pl-3">
+                      <span className="text-muted-foreground">Onloading (₦{settings.onloadingCost}/bag):</span>
+                      <span>₦{(settings.onloadingCost * totalItems).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm pl-3">
+                      <span className="text-muted-foreground">Delivery (₦{settings.deliveryCost}/bag):</span>
+                      <span>₦{(settings.deliveryCost * totalItems).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm pl-3">
+                      <span className="text-muted-foreground">Offloading (₦{settings.offloadingCost}/bag):</span>
+                      <span>₦{(settings.offloadingCost * totalItems).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <Separator />
               <div className="flex justify-between text-lg font-bold">
                 <span>Total:</span>

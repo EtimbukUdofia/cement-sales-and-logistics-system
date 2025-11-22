@@ -50,6 +50,10 @@ interface SalesOrder {
     unitPrice: number;
     totalPrice: number;
   }>;
+  isDelivery?: boolean;
+  onloadingCost?: number;
+  deliveryCost?: number;
+  offloadingCost?: number;
   totalAmount: number;
   paymentMethod: 'cash' | 'pos' | 'transfer';
   status: 'Pending' | 'Confirmed' | 'Delivered' | 'Cancelled';
@@ -591,7 +595,45 @@ export default function SalesHistoryPage() {
                 </div>
               )}
 
+              {selectedOrder.isDelivery && (
+                <div className="border rounded-lg p-4 bg-blue-50">
+                  <Label className="text-sm font-medium text-blue-900">Delivery Charges</Label>
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-blue-800">Onloading:</span>
+                      <span className="font-medium text-blue-900">{formatCurrency(selectedOrder.onloadingCost || 0)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-blue-800">Delivery:</span>
+                      <span className="font-medium text-blue-900">{formatCurrency(selectedOrder.deliveryCost || 0)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-blue-800">Offloading:</span>
+                      <span className="font-medium text-blue-900">{formatCurrency(selectedOrder.offloadingCost || 0)}</span>
+                    </div>
+                    <div className="pt-2 border-t border-blue-200 flex items-center justify-between">
+                      <span className="text-sm font-medium text-blue-900">Total Delivery Charges:</span>
+                      <span className="font-semibold text-blue-900">
+                        {formatCurrency((selectedOrder.onloadingCost || 0) + (selectedOrder.deliveryCost || 0) + (selectedOrder.offloadingCost || 0))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="pt-4 border-t">
+                {selectedOrder.isDelivery && (
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Subtotal (Products):</span>
+                      <span>{formatCurrency(selectedOrder.totalAmount - ((selectedOrder.onloadingCost || 0) + (selectedOrder.deliveryCost || 0) + (selectedOrder.offloadingCost || 0)))}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Delivery Charges:</span>
+                      <span>{formatCurrency((selectedOrder.onloadingCost || 0) + (selectedOrder.deliveryCost || 0) + (selectedOrder.offloadingCost || 0))}</span>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-lg font-bold">
                   <span>Total Amount</span>
                   <span>{formatCurrency(selectedOrder.totalAmount)}</span>

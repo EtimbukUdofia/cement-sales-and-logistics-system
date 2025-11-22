@@ -9,6 +9,7 @@ import Customer from '../models/Customer.js';
 import SalesOrder from '../models/SalesOrder.js';
 import Supplier from '../models/Supplier.js';
 import PurchaseOrder from '../models/PurchaseOrder.js';
+import Settings from '../models/Settings.js';
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ const seedData = async () => {
     await SalesOrder.deleteMany({});
     await Supplier.deleteMany({});
     await PurchaseOrder.deleteMany({});
+    await Settings.deleteMany({});
 
     console.log('Existing data cleared');
 
@@ -379,6 +381,15 @@ const seedData = async () => {
 
     const createdPurchaseOrders = await PurchaseOrder.insertMany(purchaseOrders);
     console.log(`${createdPurchaseOrders.length} purchase orders created`);
+
+    // Create default settings
+    await Settings.create({
+      onloadingCost: 500,
+      deliveryCost: 2000,
+      offloadingCost: 500,
+      isActive: true
+    });
+    console.log('Default settings created with onloading: ₦500, delivery: ₦2000, offloading: ₦500');
 
     console.log('\nSeed data created successfully!');
     console.log('\nSample Login Credentials:');

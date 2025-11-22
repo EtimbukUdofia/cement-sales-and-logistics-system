@@ -143,7 +143,7 @@ export const getSalesOrderById = async (req: AuthRequest, res: Response): Promis
 
 // create a sales order
 export const createSalesOrder = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { orderNumber, customer, shop, items, paymentMethod, salesPerson } = req.body;
+  const { orderNumber, customer, shop, items, paymentMethod, salesPerson, isDelivery, onloadingCost, deliveryCost, offloadingCost } = req.body;
 
   if (!orderNumber || typeof orderNumber !== 'string' || orderNumber.trim() === '') {
     res.status(400).json({ success: false, message: 'orderNumber is required and must be a non-empty string' });
@@ -187,6 +187,7 @@ export const createSalesOrder = async (req: AuthRequest, res: Response): Promise
 
   // validate items and compute total
   let computedTotal = 0;
+  let totalBags = 0;
   for (const item of items) {
     if (!item || !item.product || !mongoose.Types.ObjectId.isValid(String(item.product))) {
       res.status(400).json({ success: false, message: 'Each item must include a valid product id' });
@@ -201,6 +202,39 @@ export const createSalesOrder = async (req: AuthRequest, res: Response): Promise
       return;
     }
     computedTotal += item.quantity * item.unitPrice;
+    totalBags += item.quantity; // Sum up total bags
+  }
+
+  // Validate additional costs if delivery is selected
+  const deliveryData = {
+    isDelivery: isDelivery || false,
+    onloadingCost: 0,
+    deliveryCost: 0,
+    offloadingCost: 0
+  };
+
+  if (isDelivery) {
+    // Validate additional costs are non-negative numbers
+    if (onloadingCost !== undefined && (typeof onloadingCost !== 'number' || onloadingCost < 0)) {
+      res.status(400).json({ success: false, message: 'onloadingCost must be a non-negative number' });
+      return;
+    }
+    if (deliveryCost !== undefined && (typeof deliveryCost !== 'number' || deliveryCost < 0)) {
+      res.status(400).json({ success: false, message: 'deliveryCost must be a non-negative number' });
+      return;
+    }
+    if (offloadingCost !== undefined && (typeof offloadingCost !== 'number' || offloadingCost < 0)) {
+      res.status(400).json({ success: false, message: 'offloadingCost must be a non-negative number' });
+      return;
+    }
+
+    // Calculate costs per bag
+    deliveryData.onloadingCost = (onloadingCost || 0) * totalBags;
+    deliveryData.deliveryCost = (deliveryCost || 0) * totalBags;
+    deliveryData.offloadingCost = (offloadingCost || 0) * totalBags;
+
+    // Add additional costs to total (already multiplied by totalBags)
+    computedTotal += deliveryData.onloadingCost + deliveryData.deliveryCost + deliveryData.offloadingCost;
   }
 
   // If client provided totalAmount, prefer computed total to avoid tampering
@@ -226,7 +260,16 @@ export const createSalesOrder = async (req: AuthRequest, res: Response): Promise
     }
 
     // Create the sales order after successful inventory reduction
-    const newSalesOrder = new SalesOrder({ ...req.body, status: 'Pending', totalAmount: finalTotal, salesPerson: req.userId });
+    const newSalesOrder = new SalesOrder({
+      ...req.body,
+      status: 'Pending',
+      totalAmount: finalTotal,
+      salesPerson: req.userId,
+      isDelivery: deliveryData.isDelivery,
+      onloadingCost: deliveryData.onloadingCost,
+      deliveryCost: deliveryData.deliveryCost,
+      offloadingCost: deliveryData.offloadingCost
+    });
     const result = await newSalesOrder.save();
 
     // Update customer statistics

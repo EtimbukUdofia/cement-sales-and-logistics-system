@@ -189,7 +189,11 @@ export const getSalesHistory = async (req: AuthRequest, res: Response) => {
         orderDate: order.orderDate,
         deliveryDate: order.deliveryDate,
         deliveryAddress: order.deliveryAddress,
-        notes: order.notes
+        notes: order.notes,
+        isDelivery: order.isDelivery,
+        onloadingCost: order.onloadingCost,
+        deliveryCost: order.deliveryCost,
+        offloadingCost: order.offloadingCost
       })),
       pagination: {
         currentPage: pageNum,
