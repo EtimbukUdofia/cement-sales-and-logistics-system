@@ -64,10 +64,11 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
       try {
         const response = await apiClient.getSettings()
         if (response.success && response.settings) {
+          const settingsData = response.settings as { onloadingCost: number; deliveryCost: number; offloadingCost: number }
           setSettings({
-            onloadingCost: response.settings.onloadingCost,
-            deliveryCost: response.settings.deliveryCost,
-            offloadingCost: response.settings.offloadingCost
+            onloadingCost: settingsData.onloadingCost,
+            deliveryCost: settingsData.deliveryCost,
+            offloadingCost: settingsData.offloadingCost
           })
         }
       } catch (error) {
@@ -267,7 +268,7 @@ export function CheckoutDialog({ open, onOpenChange, onCheckoutSuccess }: Checko
                 <Switch
                   id="isDelivery"
                   checked={formData.isDelivery}
-                  onCheckedChange={(checked) => handleInputChange("isDelivery", checked as any)}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isDelivery: checked }))}
                   disabled={isLoadingSettings}
                 />
               </div>
