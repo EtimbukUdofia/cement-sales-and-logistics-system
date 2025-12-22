@@ -457,7 +457,7 @@ export default function CementNotCollectedPage() {
                           <div className="mt-3 pt-3 border-t">
                             <Label className="text-xs font-medium">Collect Now (max: {remaining} bags)</Label>
                             <Input
-                              type="number"
+                              type="text"
                               min="0"
                               max={remaining}
                               value={collectingQuantities[item.product._id] || 0}
