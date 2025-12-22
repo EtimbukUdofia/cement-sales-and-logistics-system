@@ -3,6 +3,7 @@ import type { Response } from "express";
 import type { AuthRequest } from "../interfaces/interface.js";
 import SalesOrder from "../models/SalesOrder.js";
 import Inventory from "../models/Inventory.js";
+import Customer from "../models/Customer.js";
 import { updateCustomerStats } from "./customer.controller.js";
 
 // Helper function to reduce inventory quantities
@@ -611,7 +612,7 @@ export const getNotCollectedOrders = async (req: AuthRequest, res: Response): Pr
 // Resolve correction (Admin can edit and mark as resolved)
 export const resolveOrderCorrection = async (req: AuthRequest, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { status, items, ...updateData } = req.body;
+  const { status, items, customerName, customerPhone, customerEmail, ...updateData } = req.body;
 
   if (!id) {
     res.status(400).json({ success: false, message: 'Sales order id is required' });
@@ -628,6 +629,30 @@ export const resolveOrderCorrection = async (req: AuthRequest, res: Response): P
     if (!currentOrder) {
       res.status(404).json({ success: false, message: 'Sales order not found' });
       return;
+    }
+
+    // Update customer details if provided
+    const customerUpdate: { name?: string; phone?: string; email?: string } = {};
+    
+    if (customerName && typeof customerName === 'string' && customerName.trim()) {
+      customerUpdate.name = customerName.trim();
+    }
+    if (customerPhone && typeof customerPhone === 'string' && customerPhone.trim()) {
+      customerUpdate.phone = customerPhone.trim();
+    }
+    if (customerEmail !== undefined) {
+      if (typeof customerEmail === 'string' && customerEmail.trim()) {
+        customerUpdate.email = customerEmail.trim();
+      }
+    }
+
+    if (Object.keys(customerUpdate).length > 0) {
+      const updatedCustomer = await Customer.findByIdAndUpdate(
+        currentOrder.customer,
+        customerUpdate,
+        { new: true }
+      );
+      console.log('Customer updated:', updatedCustomer);
     }
 
     // If items were changed and order was previously collected, adjust inventory
